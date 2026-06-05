@@ -1,0 +1,20 @@
+[project]
+name = "physics-job-hunter"
+version = "0.1.0"
+description = "Automated job search pipeline for international Physics teaching roles"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.24,<0.25",
+    "beautifulsoup4>=4.13",
+    "lxml>=5.3",
+    "supabase>=1.2,<2",
+    "apscheduler>=3.11",
+    "pydantic>=2.11",
+    "pydantic-settings>=2.8",
+    "python-dotenv>=1.1",
+    "resend>=0.8",
+    "tenacity>=9.1",
+]
+
+[project.scripts]
+physics-job-hunter = "src.main:main"

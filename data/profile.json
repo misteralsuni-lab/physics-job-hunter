@@ -1,0 +1,10 @@
+{
+  "target_subjects": ["Physics", "Science"],
+  "target_curricula": ["IGCSE", "A-Level", "IB"],
+  "preferred_countries": ["UAE", "Qatar", "Saudi Arabia", "Singapore", "China", "Thailand", "Vietnam"],
+  "min_salary_usd": 30000,
+  "visa_sponsorship_required": true,
+  "housing_allowance_preferred": true,
+  "leadership_opportunities": false,
+  "cv_summary": "Physics educator with IGCSE and A-Level experience. Background in mechanical engineering. Seeking international school positions."
+}
