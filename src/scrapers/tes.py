@@ -104,7 +104,9 @@ class TESScraper(BaseScraper):
 
         closing = raw.get("closingDate") or raw.get("applicationDeadline") or ""
 
-        url = raw.get("canonicalUrl", "") or f"https://www.tes.com/jobs/vacancy/{raw.get('id', '')}"
+        url = raw.get("canonicalUrl", "") or f"/jobs/vacancy/{raw.get('id', '')}"
+        if url.startswith("/"):
+            url = f"https://www.tes.com{url}"
 
         subject_list = ["Physics"]
         if "science" in title.lower():
