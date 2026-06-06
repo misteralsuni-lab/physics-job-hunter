@@ -54,7 +54,7 @@ class BaseScraper(ABC):
     def run(self, search_terms: list[str] | None = None) -> list[dict]:
         if search_terms is None:
             search_terms = [
-                "Physics", "Science",
-                "IGCSE Physics", "A-Level Physics", "IB Physics",
+                "Physics",
+                "IGCSE Physics", "A-Level Physics",
             ]
         return self.scrape(search_terms)

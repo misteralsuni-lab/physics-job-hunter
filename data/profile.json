@@ -1,10 +1,10 @@
 {
   "target_subjects": ["Physics", "Science"],
-  "target_curricula": ["IGCSE", "A-Level", "IB"],
+  "target_curricula": ["IGCSE", "A-Level"],
   "preferred_countries": ["UAE", "Qatar", "Saudi Arabia", "Singapore", "China", "Thailand", "Vietnam"],
   "min_salary_usd": 30000,
   "visa_sponsorship_required": true,
   "housing_allowance_preferred": true,
   "leadership_opportunities": false,
-  "cv_summary": "Physics educator with IGCSE and A-Level experience. Background in mechanical engineering. Seeking international school positions."
+  "cv_summary": "Physics Specialist (Pearson Edexcel) with B.Sc. Mechanical Engineering and PGCEi in progress at Liverpool John Moores University. Currently Physics Lead for IGCSE and A-Level at Vision International School (registered Pearson Edexcel centre). Experience teaching across IGCSE, A-Level, and Chemistry. 'Applied Mastery' approach bridging theoretical physics with industrial engineering. Based in Libya, seeking international school positions."
 }
