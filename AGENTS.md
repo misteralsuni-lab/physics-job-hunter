@@ -2,46 +2,60 @@
 
 ## Entrypoints
 
-- **CLI**: `physics-job-hunter` (needs `pip install -e .` first) or `python3 -m src.main` (works without install)
-- **Scheduler**: `nohup python3 -c "from src.scheduler.daily_run import start; start()" > /tmp/scheduler.log 2>&1 &` (APScheduler, not OS cron; accepts comma-separated times in `SCHEDULE_TIME`, e.g. `08:00,17:00,22:00,22:30,23:00`)
-- **Stop scheduler**: `kill <PID>` (find PID via `ps aux | grep daily_run` or the `echo $!` from the nohup command)
-- **Check scheduler logs**: `cat /tmp/scheduler.log`
+- **CLI**: `physics-job-hunter` (needs `pip install -e .`) or `python3 -m src.main`
+- **Scheduler**: `nohup python3 -c "from src.scheduler.daily_run import start; start()" > /tmp/scheduler.log 2>&1 &` (APScheduler, not OS cron; times from `.env` `SCHEDULE_TIME`)
+- **Stop**: `kill <PID>` (find via `ps aux | grep daily_run`)
+- **Check logs**: `cat /tmp/scheduler.log`
 - No web server or API — fully script-based pipeline.
 
-## Pipeline (in order)
+## Pipeline (`src/main.py:run_pipeline()`)
 
-`src/main.py:run_pipeline()`:
-1. **Scrape** — `TESScraper` (works) + `LinkedInScraper` (placeholder) + `SearchAssociatesScraper` (placeholder) + `SchroleScraper` (placeholder)
-2. **Deduplicate** — skip URLs already in Supabase (falls back to in-memory if Supabase down)
-3. **Upsert** — `SupabaseClient.upsert_jobs()` into `job_listings` table
-4. **Score** — `LLMScorer` probes primary + fallback LLM provider once at startup; if all fail, falls back to rule-based scoring (keyword matching on title, curriculum, country, salary)
-5. **Notify** — Telegram (`src/notify/telegram.py`, runnable directly) + Email (`src/notify/email_sender.py`, Resend or SMTP) for jobs scored ≥ 80
+1. **Scrape** — `TESScraper` (works) + `LibyanJobsScraper` (works) + `LinkedInScraper` + `SearchAssociatesScraper` + `SchroleScraper` (last 3 are placeholders, return `[]`)
+2. **Heuristic pre-filter** — `filter_relevant_jobs()` drops jobs whose title/subject don't match physics/maths/science/IGCSE/A-Level keywords
+3. **Deduplicate** — skip URLs already in Supabase (falls back to `DedupStore` SQLite at `data/dedup.db`)
+4. **Upsert** — `SupabaseClient.upsert_jobs()` into `job_listings` table; coerces empty `closing_date=""` → `None`
+5. **Score** — `LLMScorer` with Weighted Provider Registry: validates providers at startup via `validate_provider_configs()`, removes dead ones, queries survivors in weight order. Active providers: **Groq** (weight 40) → **NVIDIA** (30) → **OpenRouter** (20) → **Gemini** (15). OpenCode Zen (weight 20) is always dead (401). `SCORER_PROVIDER`/`SCORER_FALLBACK` env vars are **not consumed** — provider selection = API key presence + `PROVIDER_WEIGHTS`. If all LLM providers fail, falls back to rule-based scoring (base 30).
+6. **Notify** — Telegram (`src/notify/telegram.py`) + Email (`src/notify/email_sender.py`, Resend or SMTP) for jobs scored ≥ 80
 
 ## Important gotchas
 
 - **Python >= 3.12** required
-- **`.env` is committed with real API keys** — do NOT modify or commit changes to `.env`; it contains live Supabase and LLM provider credentials
-- **`tests/` directory is empty** — no test suite exists
+- **`.env` has live API keys** — do not modify or commit changes
+- **`tests/test_gemini_smoke.py`** — smoke test for LLM scorer; run via `python3 tests/test_gemini_smoke.py`
+- **`scripts/test_gemini.py`** — standalone Gemini key validation
+- **No lint, typecheck, formatter, or pre-commit config** — nothing to run
 - **`src/extractors/` is empty** — planned but not implemented
-- **`LinkedInScraper` is a placeholder** — `scrape()` is `async def` but never awaited; always returns `[]`
-- **`TeacherHorizonsScraper` is bypassed** — removed from `main.py` scrapers list because job detail pages require an activated teacher account; list-view data lacked school name and salary
-- **`TESScraper._extract_from_json`** catches `AttributeError` in addition to `JSONDecodeError, KeyError, TypeError` — the `__NEXT_DATA__` JSON can have null-valued fields
-- **TESScraper URLs** come from `canonicalUrl` in Next.js JSON, which is a relative path; `src/scrapers/tes.py:108` prepends `https://www.tes.com` to make absolute URLs for Telegram links
-- **`scripts/setup_supabase.sql`** — required schema for the `job_listings` table; must be applied manually to Supabase before first run
-- Virtual environment at `.venv/` but dependencies are installed globally via home dir pip; `pip install -e .` not required
-- `src/notify/email_sender.py` was renamed from `email.py` to avoid shadowing stdlib `email` package
-- No lint, typecheck, formatter, or pre-commit config
+- **`TeacherHorizonsScraper` bypassed** — detail pages require activated account
+- **`scripts/setup_supabase.sql`** — schema for `job_listings` table; must be applied manually to Supabase before first run (schema wiped on project pause/resume)
+- **`health_check()` on `SupabaseClient`** — probes with `SELECT id LIMIT 1` at startup; if it fails, raises `httpx.HTTPError` immediately so the pipeline falls through to in-memory scoring with local SQLite
+- **`update_score()` and `mark_notified()` filter by `url` column** — NOT by `id`. Callers pass `_job_key(job)` which returns `job["id"]` (UUID) or falls back to `job["url"]`. `update_score` was broken (filtered `id=url`, silent no-op)
+- **`import re` must be in `src/scoring/llm_scorer.py`** — `_strip_llm_wrappers()` uses `re.sub`. If the import is missing, every provider validation fails silently (caught by `except Exception`). All providers return HTTP 200 but JSON extraction crashes with `NameError`
+- **`upsert_jobs()` coerces empty `closing_date=""` → `None`** — PostgreSQL refuses `""` for `date` type
+- **`get_recent()` ignores its `days` parameter** — always queries `>= date.today()`. Minor bug, but affects any code expecting a sliding window
+- **Provider validation** — `validate_provider_configs()` has a 2-minute deadline; probes with a real scoring prompt. On 401/404 logs `[CONFIG_INVALID]` and removes provider. On any other failure (including extraction crash) logs `[CONFIG_INVALID]`
+- **Health state machine** — `ProviderRegistry` tracks ACTIVE → COOLING_DOWN (300s canary) → DEAD (3 consecutive cooldown failures). Dead providers stay removed for the session
+- **Intra-provider model rotation** — Groq: 1 model (`settings.groq_model`). NVIDIA: `nemotron-3-super-120b-a12b` (thinking + 90s timeout) → `nemotron-3-nano-30b-a3b`. OpenCode Zen: 2 models (both 401). OpenRouter/Gemini: 1 model each
+- **Tenacity retry** — `tenacity.Retrying` with `wait_random_exponential(multiplier=1, max=60)`, 3 attempts per model before rotating or moving to next provider. Format: log every attempt as `[PIPELINE] Provider: groq | Model: ... | Result: Success/Fail | Attempt: N`
+- **Leaky-bucket pacing** — `batch_score()` splits into chunks of `MAX_PER_CHUNK=5` with `CHUNK_DELAY=20s`. Total pipeline ~2.5min for 20 jobs
+- **Cover letter `_resolve_provider()`** — probes Groq → NVIDIA → OpenRouter → OpenCode Zen → Gemini; `time.sleep(5)` between calls in evaluation loop to avoid 429s. Files tagged `__LLM` (AI) or `__fallback` (template)
+- **TES scraper** — extracts from `__NEXT_DATA__` JSON (catches `AttributeError` for null fields); falls back to HTML parsing. Relative `canonicalUrl` → absolute via `https://www.tes.com` prepend at `src/scrapers/tes.py:108`
+- **LibyanJobs scraper** — WordPress theme; each job is `<article.loadmore-item.noo_job>`. Up to 30 jobs across 3 pages
+- **`_extract_json()` bracket walk** — used instead of brittle `json.loads()` + `removeprefix`; handles NVIDIA thinking mode interleaving reasoning text before JSON. `_extract_json_array()` for batch responses
+- Supabase DNS may be unreachable — all `SupabaseClient` methods fall through to `DedupStore` on `httpx.HTTPError`
+- Virtual environment at `.venv/` but deps installed globally; `pip install -e .` not required
 
 ## Configuration
 
-- All settings via `.env` file, loaded by `pydantic-settings` (see `src/config.py:Settings`)
-- Scoring providers: `opencode_zen`, `gemini`, `nvidia` — set via `SCORER_PROVIDER` + `SCORER_FALLBACK`
-  - If all LLM providers fail, `LLMScorer._score_via_rules` does keyword matching (subject, curriculum, country, salary) with base score 30
-- Candidate profile: `data/profile.json` — edit to tune job matching
-- `SCHEDULE_TIME` format: comma-separated 24h times, e.g. `08:00,17:00,22:00,22:30,23:00`
+- All settings via `.env`, loaded by `pydantic-settings` (`src/config.py:Settings`)
+- Candidate profile: `data/profile.json`
+- `SCHEDULE_TIME` format: comma-separated 24h, e.g. `08:00,17:00,22:00,22:30,23:00`
 
-## Relevant files
+## Key files
 
-- `src/scoring/llm_scorer.py` — probes working LLM once, caches result; `_score_via_rules` fallback at line 103
-- `src/scrapers/tes.py` — `_parse_job` at line 107 converts relative `canonicalUrl` to absolute
-- `src/main.py` — `run_pipeline()` handles Supabase failure gracefully, scores in-memory as fallback
+- `src/scoring/llm_scorer.py` — Weighted Load Balancer, 5 providers, model rotation, tenacity, health state machine, leaky bucket, `_extract_json`/`_extract_json_array`
+- `src/storage/supabase_client.py` — Supabase CRUD; every method falls through to `DedupStore` on `httpx.HTTPError`
+- `src/storage/dedup_store.py` — SQLite tables `seen_urls` and `job_cache`; persisted across runs
+- `src/generators/cover_letter.py` — 5-provider cascade, `__LLM`/`__fallback` filename tagging
+- `src/notify/telegram.py` — `scoring_reasoning` in alerts, cover letter attachment
+- `src/notify/email_sender.py` — Resend or SMTP with STARTTLS; must rename was `email.py` (stdlib conflict)
+- `scripts/setup_supabase.sql` — schema migration; apply manually via Supabase SQL Editor

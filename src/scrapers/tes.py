@@ -132,8 +132,8 @@ class TESScraper(BaseScraper):
             curricula.append("IGCSE")
         if "a-level" in text or "a level" in text:
             curricula.append("A-Level")
-        if "ib" in text or "international baccalaureate" in text:
+        if re.search(r'\bib\b', text) or "international baccalaureate" in text:
             curricula.append("IB")
-        if "gcse" in text:
+        if re.search(r'\bgcse\b', text) and "igcse" not in text:
             curricula.append("GCSE")
         return curricula or ["IGCSE", "A-Level"]

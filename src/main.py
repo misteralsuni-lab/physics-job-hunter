@@ -10,8 +10,10 @@ from src.scrapers.linkedin import LinkedInScraper
 from src.scrapers.teacher_horizons import TeacherHorizonsScraper
 from src.scrapers.search_associates import SearchAssociatesScraper
 from src.scrapers.schrole import SchroleScraper
+from src.scrapers.libyan_jobs import LibyanJobsScraper
 from src.storage.supabase_client import SupabaseClient
 from src.scoring.llm_scorer import LLMScorer
+from src.generators.cover_letter import CoverLetterGenerator
 from src.notify.telegram import send_telegram_alert
 from src.notify.email_sender import send_email_digest
 
@@ -19,8 +21,32 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 log = logging.getLogger("job-hunter")
 
 
+CORE_KEYWORDS = {"physics", "maths", "mathematics", "science", "stem",
+                  "edexcel", "igcse", "a-level", "biology", "chemistry"}
+
+
+def _is_relevant(job: dict) -> bool:
+    title = (job.get("title") or "").lower()
+    for kw in CORE_KEYWORDS:
+        if kw in title:
+            return True
+    for s in (job.get("subject") or []):
+        if s.lower() in CORE_KEYWORDS or any(kw in s.lower() for kw in CORE_KEYWORDS):
+            return True
+    return False
+
+
+def filter_relevant_jobs(jobs: list[dict]) -> list[dict]:
+    before = len(jobs)
+    kept = [j for j in jobs if _is_relevant(j)]
+    dropped = before - len(kept)
+    if dropped:
+        log.info("Heuristic pre-filter: dropped %d deviant job(s), keeping %d", dropped, len(kept))
+    return kept
+
+
 def run_scrapers() -> list[dict]:
-    scrapers = [TESScraper(), LinkedInScraper(), SearchAssociatesScraper(), SchroleScraper()]
+    scrapers = [TESScraper(), LinkedInScraper(), SearchAssociatesScraper(), SchroleScraper(), LibyanJobsScraper()]
     all_jobs = []
     for scraper in scrapers:
         try:
@@ -34,32 +60,52 @@ def run_scrapers() -> list[dict]:
 
 
 def score_jobs_in_memory(jobs: list[dict], scorer: LLMScorer) -> list[dict]:
-    scored = 0
-    for job in jobs:
-        if job.get("score") is not None:
-            continue
-        try:
-            result = scorer.score(job)
+    unscored = [j for j in jobs if j.get("score") is None]
+    if not unscored:
+        return jobs
+    log.info("Scoring %d jobs in memory (batch)...", len(unscored))
+    try:
+        results = scorer.batch_score(unscored)
+        for job, result in zip(unscored, results):
             job["score"] = result.get("score", 0)
             job["scoring_reasoning"] = result.get("reasoning", "")
-            scored += 1
-        except Exception as e:
-            log.error("  ✗ Failed to score job %s: %s", job.get("title"), e)
-    log.info("  → %d jobs scored in memory", scored)
+        log.info("  → %d jobs scored in memory", len(unscored))
+    except Exception as e:
+        log.error("  ✗ Batch scoring failed: %s — falling back to individual", e)
+        for job in unscored:
+            try:
+                result = scorer.score(job)
+                job["score"] = result.get("score", 0)
+                job["scoring_reasoning"] = result.get("reasoning", "")
+            except Exception as e2:
+                log.error("  ✗ Failed to score job %s: %s", job.get("title"), e2)
     return jobs
+
+
+def _job_key(job: dict) -> str:
+    return str(job.get("id") or job.get("url", ""))
 
 
 def score_jobs_from_db(db: SupabaseClient, scorer: LLMScorer) -> int:
     unscored = db.get_unscored_jobs()
-    log.info("Scoring %d jobs from DB...", len(unscored))
+    if not unscored:
+        return 0
+    log.info("Scoring %d jobs from DB (batch)...", len(unscored))
     scored = 0
-    for job in unscored:
-        try:
-            result = scorer.score(job)
-            db.update_score(job["id"], result["score"], result["reasoning"])
+    try:
+        results = scorer.batch_score(unscored)
+        for job, result in zip(unscored, results):
+            db.update_score(_job_key(job), result.get("score", 0), result.get("reasoning", ""))
             scored += 1
-        except Exception as e:
-            log.error("  ✗ Failed to score job %s: %s", job.get("id"), e)
+    except Exception as e:
+        log.error("  ✗ Batch scoring from DB failed: %s — falling back to individual", e)
+        for job in unscored:
+            try:
+                result = scorer.score(job)
+                db.update_score(_job_key(job), result["score"], result["reasoning"])
+                scored += 1
+            except Exception as e2:
+                log.error("  ✗ Failed to score job %s: %s", _job_key(job), e2)
     log.info("  → %d jobs scored from DB", scored)
     return scored
 
@@ -70,14 +116,26 @@ def send_notifications(jobs: list[dict], db: SupabaseClient | None = None) -> No
         log.info("No top-scoring jobs to notify")
         return
 
-    tg = send_telegram_alert(top_jobs)
+    # Generate bespoke cover letters for every top-scoring job
+    log.info("Generating cover letters for %d top-scoring jobs...", len(top_jobs))
+    generator = CoverLetterGenerator()
+    cover_letter_paths: dict[str, str] = {}
+    for job in top_jobs:
+        try:
+            path = generator.generate(job)
+            if path:
+                cover_letter_paths[job["url"]] = path
+        except Exception as e:
+            log.error("  ✗ Cover letter generation failed for %s: %s", job.get("title", "?"), e)
+
+    tg = send_telegram_alert(top_jobs, cover_letter_paths)
     log.info("Telegram: %d alerts sent", tg)
 
     email_ok = send_email_digest(top_jobs)
     log.info("Email digest: %s", "sent" if email_ok else "skipped")
 
     if db is not None:
-        db.mark_notified([j["id"] for j in top_jobs])
+        db.mark_notified([_job_key(j) for j in top_jobs])
 
 
 def run_pipeline() -> dict:
@@ -87,12 +145,17 @@ def run_pipeline() -> dict:
     log.info("=" * 50)
 
     jobs = run_scrapers()
+    jobs = filter_relevant_jobs(jobs)
     count = 0
     scored = 0
 
     db_available = False
     try:
         db = SupabaseClient()
+        if not db.health_check():
+            log.info("Supabase unhealthy — DedupStore fallback for entire pipeline")
+            raise httpx.HTTPError("health check failed")
+
         scorer = LLMScorer()
 
         existing = db.get_seen_urls()

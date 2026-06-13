@@ -8,3 +8,25 @@ tmp/
 .pytest_cache/
 test-results/
 .understand-anything/
+
+# Generated cover letter drafts (review before submitting)
+data/cover_letters/
+docs/China and Online IGCSE_A-Level Teaching.pdf
+docs/China and Online IGCSE_A-Level Teaching.txt
+data/local_job_db.json
+src/generators/cover_letter.py
+agency-agents-main/
+opencode export \[ses_17c8132f9ffe6NaanMaSnfzyqD].json
+.env.example
+AGENTS.md
+bash
+code_review_report.md
+llm_routing_critique.md
+.venv/pyvenv.cfg
+data/dedup.db
+docs/ONBOARDING.md
+docs/PHYSICS_H_ONBOARDING.md
+scripts/test_gemini.py
+docs/README2.md
+AGENTS.md
+AGENTS.md

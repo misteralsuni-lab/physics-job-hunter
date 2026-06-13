@@ -27,6 +27,15 @@ class BaseScraper(ABC):
             timeout=30.0,
         )
 
+    def close(self):
+        self.client.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+
     def absolute_url(self, path: str) -> str:
         if path.startswith("http"):
             return path
@@ -48,7 +57,7 @@ class BaseScraper(ABC):
         return (element.get(attr) or "").strip()
 
     @abstractmethod
-    def scrape(self, search_terms: list[str]) -> list[dict]:
+    def scrape(self, search_terms: list[str] | None = None) -> list[dict]:
         ...
 
     def run(self, search_terms: list[str] | None = None) -> list[dict]:
