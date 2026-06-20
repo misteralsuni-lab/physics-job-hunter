@@ -32,6 +32,7 @@ PROVIDER_WEIGHTS: dict[str, int] = {
     "nvidia": 30,
     "openrouter": 20,
     "opencode_zen": 20,
+    "zenmux": 20,
     "gemini": 15,
 }
 
@@ -45,20 +46,17 @@ JOB LISTING:
 {job}
 
 SCORING RUBRIC (additive, max 100):
-- Curriculum match (IGCSE/A-Level/IB alignment): 0-25
-- Subject match (Physics, Maths, Science): 0-20
-- Location/country desirability: 0-15
-- Salary competitiveness: 0-15
-- Visa sponsorship offered: 0-10
+- Curriculum match (IGCSE/A-Level): 0-35
+- Subject match (Physics, Maths, Science): 0-30
+- Location/country desirability: 0-25
 - Housing/benefits: 0-10
-- Deadline urgency (sooner = higher): 0-5
 
 CRITICAL INSTRUCTIONS:
 - Output ONLY a valid JSON object — no introductory text, no conversational filler, no markdown, no code fences.
 - Your entire response must start with {{ and end with }}.
 
 EXACT SCHEMA:
-{{"score": <int 0-100>, "reasoning": "<1-2 sentences, max 200 chars>", "visa_sponsorship": <true|false|null>, "housing_allowance": <true|false|null>, "curriculum_match": "<IGCSE|A-Level|IB|Other>"}}
+{{"score": <int 0-100>, "reasoning": "<1-2 sentences, max 200 chars>", "housing_allowance": <true|false|null>, "curriculum_match": "<IGCSE|A-Level|IB|Other>"}}
 
 - If information is missing, use null for booleans and "Other" for curriculum_match."""
 
@@ -74,11 +72,10 @@ JOB LISTINGS (score each independently):
 Return a JSON array of exactly {n} objects, one per job, in input order.
 
 EACH OBJECT SCHEMA:
-{{"score": <int 0-100>, "reasoning": "<1-2 sentences, max 200 chars>", "visa_sponsorship": <true|false|null>, "housing_allowance": <true|false|null>, "curriculum_match": "<IGCSE|A-Level|IB|Other>"}}
+{{"score": <int 0-100>, "reasoning": "<1-2 sentences, max 200 chars>", "housing_allowance": <true|false|null>, "curriculum_match": "<IGCSE|A-Level|IB|Other>"}}
 
 SCORING RUBRIC (additive, max 100):
-- Curriculum match: 0-25 | Subject match: 0-20 | Location: 0-15
-- Salary: 0-15 | Visa: 0-10 | Housing: 0-10 | Urgency: 0-5
+- Curriculum match: 0-35 | Subject match: 0-30 | Location: 0-25 | Housing: 0-10
 
 CRITICAL INSTRUCTIONS:
 - Output ONLY a raw JSON array: [{{...}}, {{...}}, ...]
@@ -204,7 +201,7 @@ def compress_job(job: dict[str, Any]) -> dict[str, Any]:
     """Return a minimal copy of *job* with only the fields the LLM needs."""
     compressed = {}
     for k in ("title", "school", "subject", "curriculum", "country",
-              "salary_range", "location", "description", "closing_date",
+              "location", "description", "closing_date",
               "job_type", "easy_apply"):
         v = job.get(k)
         if v:
@@ -251,6 +248,11 @@ class LLMScorer:
         # OpenCode Zen
         if settings.opencode_zen_api_key:
             self._providers.append(("opencode_zen", self._score_via_opencode_zen, None))
+
+        # ZenMux (free tier — GLM 5.2, etc.)
+        if settings.zenmux_api_key:
+            self._providers.append(("zenmux", self._score_via_zenmux,
+                                    self._batch_score_via_zenmux))
 
         # Gemini
         if settings.gemini_api_key:
@@ -311,6 +313,9 @@ class LLMScorer:
                 if result is not None:
                     return result
             return None
+        if name == "zenmux" and self.ZENMUX_MODELS:
+            model = self.ZENMUX_MODELS[0]
+            return self._call_zenmux(model, prompt)
         if name == "gemini":
             return self._call_gemini("gemini-2.5-flash", prompt)
         return None
@@ -355,7 +360,11 @@ class LLMScorer:
     def _load_profile(self) -> dict:
         try:
             with open("data/profile.json") as f:
-                return json.load(f) | {"cv_summary": ""}
+                # Preserve the real cv_summary from the profile file. The earlier
+                # `| {"cv_summary": ""}` merge overwrote it with an empty string
+                # because dict `|` keeps the right operand, sending every scoring
+                # prompt out with a blank CV summary.
+                return json.load(f)
         except FileNotFoundError:
             return {
                 "target_subjects": ["Physics"],
@@ -484,11 +493,14 @@ class LLMScorer:
             job=json.dumps(compressed, indent=2),
         )
 
-        for name, single_fn, _ in self._providers:
+        # Consult the registry so COOLING_DOWN / DEAD providers are skipped
+        # instead of being retried on every job. record_success/record_failure
+        # below drive the state transitions.
+        for cfg in self._registry.active_providers(PROVIDER_WEIGHTS):
             try:
-                result = single_fn(prompt)
+                result = cfg.single_fn(prompt)
                 if result is not None:
-                    self._registry.record_success(name)
+                    self._registry.record_success(cfg.name)
                     score, mods = self._apply_modifiers(result.get("score", 0), job)
                     result["score"] = score
                     if mods:
@@ -497,8 +509,8 @@ class LLMScorer:
                                                if existing else "; ".join(mods))
                     return result
             except Exception as e:
-                log.warning("%s score failed: %s — cascading to next provider", name, e)
-                self._registry.record_failure(name)
+                log.warning("%s score failed: %s — cascading to next provider", cfg.name, e)
+                self._registry.record_failure(cfg.name)
 
         # Ultimate fallback — rule-based
         result = self._score_via_rules(job)
@@ -545,7 +557,7 @@ class LLMScorer:
         serialized = json.dumps([{
             k: v for k, v in j.items()
             if k in ("title", "school", "subject", "curriculum", "country",
-                     "salary_range", "location", "description")
+                     "location", "description")
         } for j in compressed], indent=2)
         prompt = BATCH_SCORING_PROMPT.format(
             n=len(chunk),
@@ -553,18 +565,18 @@ class LLMScorer:
             serialized_jobs=serialized,
         )
 
-        for name, _single_fn, batch_fn in self._providers:
-            if batch_fn is None:
+        for cfg in self._registry.active_providers(PROVIDER_WEIGHTS):
+            if cfg.batch_fn is None:
                 continue
             try:
-                result = batch_fn(prompt, len(chunk))
+                result = cfg.batch_fn(prompt, len(chunk))
                 if result is not None:
-                    self._registry.record_success(name)
-                    log.info("Batch scored %d jobs via %s", len(result), name)
+                    self._registry.record_success(cfg.name)
+                    log.info("Batch scored %d jobs via %s", len(result), cfg.name)
                     return result
             except Exception as e:
-                log.warning("%s batch failed: %s — cascading", name, e)
-                self._registry.record_failure(name)
+                log.warning("%s batch failed: %s — cascading", cfg.name, e)
+                self._registry.record_failure(cfg.name)
 
         return None  # caller will fall back to individual cascade
 
@@ -576,6 +588,7 @@ class LLMScorer:
     GROQ_MODELS: list[str] = []
     NVIDIA_MODELS: list[str] = []
     OPENCODE_MODELS: list[str] = ["deepseek-v4-flash", "deepseek-v4-pro"]
+    ZENMUX_MODELS: list[str] = ["z-ai/glm-5.2-free", "z-ai/glm-4.7-flash-free"]
 
     # ------------------------------------------------------------------
     #  _call_base — shared HTTP POST to any OpenAI-compatible endpoint
@@ -764,6 +777,62 @@ class LLMScorer:
             return None
 
     # ------------------------------------------------------------------
+    #  Provider: ZenMux (free tier)
+    # ------------------------------------------------------------------
+
+    def _call_zenmux(self, model: str, prompt: str) -> dict | None:
+        return self._call_base(
+            "https://zenmux.ai/api/v1/chat/completions",
+            settings.zenmux_api_key, model, prompt,
+            max_tokens=2000, timeout=120,
+        )
+
+    def _score_via_zenmux(self, prompt: str) -> dict | None:
+        return self._try_models("zenmux", prompt, self.ZENMUX_MODELS, self._call_zenmux)
+
+    def _batch_score_via_zenmux(self, prompt: str, expected: int) -> list[dict] | None:
+        try:
+            resp = httpx.post(
+                "https://zenmux.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {settings.zenmux_api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.ZENMUX_MODELS[0],
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.1,
+                    "max_tokens": 2000,
+                },
+                timeout=60,
+            )
+            if resp.status_code in (401, 404):
+                log.warning("[CONFIG_INVALID] ZenMux batch rejected (HTTP %s)", resp.status_code)
+                return None
+            resp.raise_for_status()
+            content = resp.json()["choices"][0]["message"]["content"]
+            json_str = self._extract_json_array(content)
+            if json_str is None:
+                json_str = self._extract_json(content)
+                if json_str:
+                    return [json.loads(json_str)]
+                return None
+            scores = json.loads(json_str)
+            if isinstance(scores, dict):
+                scores = [scores]
+            if len(scores) != expected:
+                log.warning("ZenMux batch: expected %d scores, got %d", expected, len(scores))
+            return scores[:expected]
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code in (429, 500, 502, 503):
+                raise
+            log.warning("ZenMux batch failed: %s", e)
+            return None
+        except Exception as e:
+            log.debug("ZenMux batch failed: %s", e)
+            return None
+
+    # ------------------------------------------------------------------
     #  Provider: Gemini
     # ------------------------------------------------------------------
 
@@ -892,16 +961,10 @@ class LLMScorer:
             score += 10
             reason.append("country match")
 
-        salary = job.get("salary_range", "")
-        if salary:
-            score += 10
-            reason.append("salary listed")
-
         score = min(score, 100)
         return {
             "score": score,
             "reasoning": "; ".join(reason) if reason else "rule-based fallback",
-            "visa_sponsorship": None,
             "housing_allowance": None,
             "curriculum_match": next((c for c in target_curricula if c.lower() in combined), "Other"),
         }

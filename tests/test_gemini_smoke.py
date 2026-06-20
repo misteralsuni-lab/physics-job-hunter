@@ -53,7 +53,7 @@ def smoke_score() -> bool:
         log.error("❌ score() returned None")
         return False
 
-    expected_keys = {"score", "reasoning", "visa_sponsorship", "housing_allowance", "curriculum_match"}
+    expected_keys = {"score", "reasoning", "housing_allowance", "curriculum_match"}
     missing = expected_keys - result.keys()
     if missing:
         log.error("❌ Missing keys in score result: %s", missing)

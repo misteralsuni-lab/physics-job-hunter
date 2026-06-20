@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     smtp_user: str = ""
     smtp_password: str = ""
 
+    notify_score_threshold: int = 50
     schedule_time: str = "08:00"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")

@@ -13,19 +13,25 @@ It automatically searches the web for physics teacher job postings, scores how w
 
 ---
 
-## Running it on autopilot
+## Running it on autopilot (systemd)
 
-- **Start the daily checker** — `nohup python3 -c "from src.scheduler.daily_run import start; start()" > /tmp/scheduler.log 2>&1 &`
-  - Turns on a background robot that wakes up at specific times every day to look for jobs. Closing your computer won't turn it off.
+The scheduler runs as a background service managed by systemd. It auto-starts on power-on, restarts itself if it crashes, and survives sleep, hibernation, and reboots.
 
-- **Stop the robot** — `kill <PID>` (find with `ps aux | grep daily_run`)
-  - Finds the running background robot and turns it off when you don't want it anymore.
+- **Turn it on now** — `systemctl --user start physics-job-hunter.service`
+- **Turn it off** — `systemctl --user stop physics-job-hunter.service`
+- **Check if it's running** — `systemctl --user status physics-job-hunter.service`
+- **Watch live activity** — `journalctl --user -u physics-job-hunter.service -f`
+- **Stop it from auto-starting on boot** — `systemctl --user disable physics-job-hunter.service`
 
-- **Read the robot's diary** — `cat /tmp/scheduler.log`
-  - Shows a plain-text report of what the robot found, when it ran, and whether anything went wrong.
+The robot wakes up at 08:00, 17:00, 22:00, 22:30, and 23:00 every day.
 
 ---
 
-## The Windows equivalents (PowerShell)
+## If systemd is not available (fallback)
 
-Same three ideas — find the robot, stop it, read its diary — but the words are slightly different because Windows speaks a different command language. If you are on Windows with WSL, adding `wsl` in front lets you use the simpler Linux commands instead.
+- **Start the background robot** — `nohup python3 -c "from src.scheduler.daily_run import start; start()" > /tmp/scheduler.log 2>&1 &`
+  - This one **dies on reboot**. It's only useful if systemd isn't available.
+
+- **Stop the robot** — `kill <PID>` (find with `ps aux | grep daily_run`)
+
+- **Read the robot's diary** — `cat /tmp/scheduler.log`

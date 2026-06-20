@@ -65,7 +65,7 @@ class DedupStore:
             result.append(job)
         return result
 
-    def get_scored_unnotified(self, min_score: int = 80) -> list[dict[str, Any]]:
+    def get_scored_unnotified(self, min_score: int = 50) -> list[dict[str, Any]]:
         rows = self._conn.execute(
             "SELECT data, score FROM job_cache WHERE score >= ? AND notified = 0",
             (min_score,),

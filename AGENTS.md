@@ -3,10 +3,13 @@
 ## Entrypoints
 
 - **CLI**: `physics-job-hunter` (needs `pip install -e .`) or `python3 -m src.main`
-- **Scheduler**: `nohup python3 -c "from src.scheduler.daily_run import start; start()" > /tmp/scheduler.log 2>&1 &` (APScheduler, not OS cron; times from `.env` `SCHEDULE_TIME`)
-- **Stop**: `kill <PID>` (find via `ps aux | grep daily_run`)
-- **Check logs**: `cat /tmp/scheduler.log`
+- **Scheduler (systemd user service)**: `systemctl --user start physics-job-hunter.service` (APScheduler via systemd, survives reboot via `loginctl enable-linger $USER`)
+- **Stop**: `systemctl --user stop physics-job-hunter.service`
+- **Status**: `systemctl --user status physics-job-hunter.service`
+- **Live logs**: `journalctl --user -u physics-job-hunter.service -f`
+- **Disable auto-start**: `systemctl --user disable physics-job-hunter.service`
 - No web server or API — fully script-based pipeline.
+- Legacy nohup command (if systemd unavailable): `nohup python3 -c "from src.scheduler.daily_run import start; start()" > /tmp/scheduler.log 2>&1 &`
 
 ## Pipeline (`src/main.py:run_pipeline()`)
 
@@ -14,8 +17,8 @@
 2. **Heuristic pre-filter** — `filter_relevant_jobs()` drops jobs whose title/subject don't match physics/maths/science/IGCSE/A-Level keywords
 3. **Deduplicate** — skip URLs already in Supabase (falls back to `DedupStore` SQLite at `data/dedup.db`)
 4. **Upsert** — `SupabaseClient.upsert_jobs()` into `job_listings` table; coerces empty `closing_date=""` → `None`
-5. **Score** — `LLMScorer` with Weighted Provider Registry: validates providers at startup via `validate_provider_configs()`, removes dead ones, queries survivors in weight order. Active providers: **Groq** (weight 40) → **NVIDIA** (30) → **OpenRouter** (20) → **Gemini** (15). OpenCode Zen (weight 20) is always dead (401). `SCORER_PROVIDER`/`SCORER_FALLBACK` env vars are **not consumed** — provider selection = API key presence + `PROVIDER_WEIGHTS`. If all LLM providers fail, falls back to rule-based scoring (base 30).
-6. **Notify** — Telegram (`src/notify/telegram.py`) + Email (`src/notify/email_sender.py`, Resend or SMTP) for jobs scored ≥ 80
+5. **Score** — `LLMScorer` with Weighted Provider Registry: validates providers at startup via `validate_provider_configs()`, removes dead ones, queries survivors in weight order. Active providers: **Groq** (weight 40) → **NVIDIA** (30) → **OpenRouter** (20) → **Gemini** (15). OpenCode Zen (weight 20) is always dead (401). `SCORER_PROVIDER`/`SCORER_FALLBACK` env vars are **not consumed** — provider selection = API key presence + `PROVIDER_WEIGHTS`. If all LLM providers fail, falls back to rule-based scoring (base 30). LLM rubric: Curriculum 0-30, Subject 0-25, Location 0-20, Salary 0-15, Housing 0-10 (max 100). `visa_sponsorship` and `deadline_urgency` removed.
+6. **Notify** — Telegram (`src/notify/telegram.py`) + Email (`src/notify/email_sender.py`, Resend or SMTP) for jobs scored ≥ `settings.notify_score_threshold` (default 50, configurable via `NOTIFY_SCORE_THRESHOLD` in `.env`)
 
 ## Important gotchas
 
@@ -49,6 +52,7 @@
 - All settings via `.env`, loaded by `pydantic-settings` (`src/config.py:Settings`)
 - Candidate profile: `data/profile.json`
 - `SCHEDULE_TIME` format: comma-separated 24h, e.g. `08:00,17:00,22:00,22:30,23:00`
+- `NOTIFY_SCORE_THRESHOLD` — minimum score for notifications (default 50, set in `.env`)
 
 ## Key files
 

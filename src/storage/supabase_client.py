@@ -103,7 +103,7 @@ class SupabaseClient:
             log.warning("update_score failed for %s: %s — falling back to dedup", url, e)
             self._dedup.update_score(url, score, reasoning)
 
-    def get_scored_unnotified(self, min_score: int = 80) -> list[dict[str, Any]]:
+    def get_scored_unnotified(self, min_score: int = settings.notify_score_threshold) -> list[dict[str, Any]]:
         try:
             result = self.client.table("job_listings").select("*").gte("score", min_score).eq("notified", False).execute()
             return result.data

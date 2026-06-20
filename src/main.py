@@ -1,3 +1,4 @@
+import argparse
 import logging
 import sys
 from datetime import datetime
@@ -111,7 +112,7 @@ def score_jobs_from_db(db: SupabaseClient, scorer: LLMScorer) -> int:
 
 
 def send_notifications(jobs: list[dict], db: SupabaseClient | None = None) -> None:
-    top_jobs = [j for j in jobs if j.get("score", 0) >= 80]
+    top_jobs = [j for j in jobs if j.get("score", 0) >= settings.notify_score_threshold]
     if not top_jobs:
         log.info("No top-scoring jobs to notify")
         return
@@ -138,7 +139,7 @@ def send_notifications(jobs: list[dict], db: SupabaseClient | None = None) -> No
         db.mark_notified([_job_key(j) for j in top_jobs])
 
 
-def run_pipeline() -> dict:
+def run_pipeline(force_notify: bool = False) -> dict:
     start = datetime.now()
     log.info("=" * 50)
     log.info("Physics Job Hunter — Pipeline Start")
@@ -170,8 +171,16 @@ def run_pipeline() -> dict:
         db_scored = score_jobs_from_db(db, scorer)
         scored += db_scored
 
-        db_jobs = db.get_scored_unnotified(min_score=80)
-        send_notifications(db_jobs, db)
+        if force_notify:
+            all_scored = db.client.table("job_listings").select("*").gte("score", settings.notify_score_threshold).execute().data
+            if all_scored:
+                log.info("Force-notify: sending notifications for %d jobs", len(all_scored))
+                send_notifications(all_scored)
+            else:
+                log.info("Force-notify: no jobs scored >= %d", settings.notify_score_threshold)
+        else:
+            db_jobs = db.get_scored_unnotified(min_score=settings.notify_score_threshold)
+            send_notifications(db_jobs, db)
 
         db_available = True
 
@@ -191,7 +200,11 @@ def run_pipeline() -> dict:
 
 
 def main():
-    result = run_pipeline()
+    parser = argparse.ArgumentParser(description="Physics Job Hunter Pipeline")
+    parser.add_argument("--force-notify", action="store_true", help="Notify all scored jobs ≥80, ignoring 'notified' flag")
+    args = parser.parse_args()
+
+    result = run_pipeline(force_notify=args.force_notify)
     print(f"Done. {result['new']} new jobs, {result['scored']} scored in {result['elapsed']:.1f}s")
     sys.exit(0)
 
