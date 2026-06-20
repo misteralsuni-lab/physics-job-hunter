@@ -1,4 +1,5 @@
 import logging
+import re
 import sys
 from pathlib import Path
 
@@ -16,15 +17,29 @@ log = logging.getLogger("job-hunter")
 API_BASE = "https://api.telegram.org/bot{token}"
 
 
+# HTML entity escaping for Telegram's parse_mode=HTML.
+# Escapes &, <, >, " so values are safe in both element text and inside
+# attributes (e.g. the url interpolated into <a href="...">).
+_HTMLESC_RE = re.compile(r'[&<>"]')
+
+
+def _esc(text: str) -> str:
+    """Escape &, <, >, " for safe interpolation into Telegram HTML."""
+    return _HTMLESC_RE.sub(
+        lambda m: {"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[m.group()],
+        text,
+    )
+
+
 def _send_message(chat_id: str, text: str) -> bool:
-    """Send a Markdown text message. Returns True on success."""
+    """Send an HTML text message. Returns True on success."""
     try:
         resp = httpx.post(
             f"{API_BASE.format(token=settings.telegram_bot_token)}/sendMessage",
             json={
                 "chat_id": chat_id,
                 "text": text,
-                "parse_mode": "Markdown",
+                "parse_mode": "HTML",
                 "disable_web_page_preview": True,
             },
             timeout=10,
@@ -32,7 +47,7 @@ def _send_message(chat_id: str, text: str) -> bool:
         resp.raise_for_status()
         return True
     except Exception as exc:
-        log.debug("Telegram sendMessage failed: %s", exc)
+        log.warning("Telegram sendMessage failed: %s", exc)
         return False
 
 
@@ -49,7 +64,7 @@ def _send_document(chat_id: str, file_path: str, caption: str) -> bool:
             data={
                 "chat_id": chat_id,
                 "caption": caption,
-                "parse_mode": "Markdown",
+                "parse_mode": "HTML",
             },
             files={"document": (path.name, path.read_bytes(), "text/markdown")},
             timeout=30,
@@ -57,7 +72,7 @@ def _send_document(chat_id: str, file_path: str, caption: str) -> bool:
         resp.raise_for_status()
         return True
     except Exception as exc:
-        log.debug("Telegram sendDocument failed: %s", exc)
+        log.warning("Telegram sendDocument failed: %s", exc)
         return False
 
 
@@ -99,18 +114,18 @@ def send_telegram_alert(
         has_cover = url in paths
         reasoning = job.get("scoring_reasoning", "") or job.get("reasoning", "")
         message = (
-            f"🎯 *{title}*\n"
-            f"🏫 {school}\n"
-            f"🌍 {country}\n"
-            f"📚 {curriculum}\n"
-            f"💰 {salary}\n"
+            f"🎯 <b>{_esc(title)}</b>\n"
+            f"🏫 {_esc(school)}\n"
+            f"🌍 {_esc(country)}\n"
+            f"📚 {_esc(curriculum)}\n"
+            f"💰 {_esc(salary)}\n"
             f"⭐ Score: {score}/100\n"
-            + (f"💡 {reasoning}\n" if reasoning else "")
-            + f"[Apply]({url})"
+            + (f"💡 {_esc(reasoning)}\n" if reasoning else "")
+            + f'<a href="{_esc(url)}">Apply</a>'
         )
 
         if has_cover:
-            message += "\n📄 _Cover letter attached below._"
+            message += "\n📄 <i>Cover letter attached below.</i>"
 
         ok = _send_message(chat_id, message)
         if ok:
@@ -119,9 +134,9 @@ def send_telegram_alert(
         # Send the cover letter document if one exists
         if has_cover:
             caption = (
-                f"📄 Cover Letter — {title}\n"
-                f"🏫 {school}  ·  ⭐ {score}/100"
-                + (f"\n💡 {reasoning}" if reasoning else "")
+                f"📄 Cover Letter — {_esc(title)}\n"
+                f"🏫 {_esc(school)}  ·  ⭐ {score}/100"
+                + (f"\n💡 {_esc(reasoning)}" if reasoning else "")
             )
             _send_document(chat_id, paths[url], caption)
 

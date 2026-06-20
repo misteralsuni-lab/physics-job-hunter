@@ -96,5 +96,6 @@ def _send_via_smtp(subject: str, html: str) -> bool:
             server.login(settings.smtp_user, settings.smtp_password)
             server.send_message(msg)
         return True
-    except Exception:
+    except Exception as e:
+        log.warning("SMTP send failed: %s", e)
         return False

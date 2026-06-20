@@ -10,8 +10,5 @@ class SchroleScraper(BaseScraper):
     SOURCE_NAME = "schrole"
 
     def scrape(self, search_terms: list[str]) -> list[dict[str, Any]]:
-        log.warning(
-            "Schrole requires login credentials. "
-            "Set SCHROLE_EMAIL and SCHROLE_PASSWORD in .env to enable."
-        )
+        log.warning("Schrole scraper is not yet implemented — returning no jobs.")
         return []

@@ -938,35 +938,51 @@ class LLMScorer:
     # ------------------------------------------------------------------
 
     def _score_via_rules(self, job: dict) -> dict:
+        # Aligned with the LLM rubric (Curriculum 0-35, Subject 0-30,
+        # Location 0-25, Housing 0-10) so that the ultimate fallback — only
+        # reached when every provider is dead — ranks jobs on a comparable
+        # scale rather than capping at 80 and silently gating good jobs below
+        # the notify threshold. Slightly conservative on each axis to avoid
+        # over-ranking in the absence of the LLM's nuance.
         title = (job.get("title") or "").lower()
         combined = f"{title} {(job.get('school') or '')} {(job.get('subject') or '')} {(job.get('curriculum') or '')}".lower()
         reason = []
-        score = 30
+        score = 0
 
+        # Subject match (LLM rubric: 0-30)
         target_subjects = self.profile.get("target_subjects", ["Physics"])
         if any(s.lower() in title for s in target_subjects):
-            score += 25
+            score += 30
             reason.append("subject match")
 
+        # Curriculum match (LLM rubric: 0-35)
         target_curricula = self.profile.get("target_curricula", [])
-        for curr in target_curricula:
-            if curr.lower() in combined:
-                score += 15
-                reason.append(f"{curr}")
-                break
+        if target_curricula and any(c.lower() in combined for c in target_curricula):
+            score += 30  # conservative — full rubric weight is 35
+            matched_curr = next((c for c in target_curricula if c.lower() in combined), "Other")
+            reason.append(matched_curr)
+        else:
+            matched_curr = "Other"
 
+        # Location match (LLM rubric: 0-25)
         country = (job.get("country") or "").lower()
         target_countries = self.profile.get("target_countries", [])
         if target_countries and country in [c.lower() for c in target_countries]:
-            score += 10
+            score += 25
             reason.append("country match")
+
+        # Housing/benefits (LLM rubric: 0-10)
+        housing = job.get("housing_allowance")
+        if housing:
+            score += 10
+            reason.append("housing listed")
 
         score = min(score, 100)
         return {
             "score": score,
             "reasoning": "; ".join(reason) if reason else "rule-based fallback",
-            "housing_allowance": None,
-            "curriculum_match": next((c for c in target_curricula if c.lower() in combined), "Other"),
+            "housing_allowance": housing,
+            "curriculum_match": matched_curr,
         }
 
     # ------------------------------------------------------------------

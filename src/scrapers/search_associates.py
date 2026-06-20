@@ -10,8 +10,5 @@ class SearchAssociatesScraper(BaseScraper):
     SOURCE_NAME = "search_associates"
 
     def scrape(self, search_terms: list[str]) -> list[dict[str, Any]]:
-        log.warning(
-            "Search Associates requires login credentials. "
-            "Set SEARCH_ASSOCIATES_EMAIL and SEARCH_ASSOCIATES_PASSWORD in .env to enable."
-        )
+        log.warning("Search Associates scraper is not yet implemented — returning no jobs.")
         return []
