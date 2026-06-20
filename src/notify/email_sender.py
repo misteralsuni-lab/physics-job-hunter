@@ -1,11 +1,14 @@
 from datetime import date
 from typing import Any
+import logging
 import smtplib
 from email.mime.text import MIMEText
 
 import httpx
 
 from src.config import settings
+
+log = logging.getLogger("job-hunter")
 
 
 def _build_digest_html(jobs: list[dict[str, Any]]) -> str:
@@ -18,6 +21,7 @@ def _build_digest_html(jobs: list[dict[str, Any]]) -> str:
             <td>{", ".join(j.get("curriculum", []))}</td>
             <td>{j.get("salary_range", "")}</td>
             <td><strong>{j.get("score", "N/A")}</strong></td>
+            <td><em>{j.get("scoring_reasoning", "") or j.get("reasoning", "") or ""}</em></td>
         </tr>
         """
         for j in jobs
@@ -30,7 +34,7 @@ def _build_digest_html(jobs: list[dict[str, Any]]) -> str:
         <table border="1" cellpadding="8" style="border-collapse: collapse; width: 100%;">
             <thead style="background: #333;">
                 <tr>
-                    <th>Title</th><th>School</th><th>Country</th><th>Curriculum</th><th>Salary</th><th>Score</th>
+                    <th>Title</th><th>School</th><th>Country</th><th>Curriculum</th><th>Salary</th><th>Score</th><th>Reasoning</th>
                 </tr>
             </thead>
             <tbody>{rows}</tbody>
@@ -58,7 +62,7 @@ def _send_via_resend(subject: str, html: str) -> bool:
     if not settings.resend_api_key or not settings.email_to:
         return False
     try:
-        httpx.post(
+        resp = httpx.post(
             "https://api.resend.com/emails",
             headers={"Authorization": f"Bearer {settings.resend_api_key}"},
             json={
@@ -69,8 +73,12 @@ def _send_via_resend(subject: str, html: str) -> bool:
             },
             timeout=15,
         )
-        return True
-    except Exception:
+        if resp.is_success:
+            return True
+        log.warning("Resend send failed: HTTP %s — %s", resp.status_code, resp.text)
+        return False
+    except Exception as e:
+        log.warning("Resend send raised: %s", e)
         return False
 
 
