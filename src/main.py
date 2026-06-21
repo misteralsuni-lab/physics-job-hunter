@@ -25,9 +25,28 @@ log = logging.getLogger("job-hunter")
 CORE_KEYWORDS = {"physics", "maths", "mathematics", "science", "stem",
                   "edexcel", "igcse", "a-level", "biology", "chemistry"}
 
+# Jobs containing these phrases are definitively out-of-scope for a
+# Physics / Maths / Science teacher. Checked before the positive match
+# so that e.g. "Teacher of Physical Education" or "(Female Applicants
+# Only)" is rejected even if "science" or "igcse" appears elsewhere.
+_EXCLUSION_PHRASES = frozenset({
+    "physical education",
+    "pe teacher",
+    "early years",
+    "primary school",
+    "female applicants only",
+    "male applicants only",
+    "female only",
+    "male only",
+})
+
 
 def _is_relevant(job: dict) -> bool:
     title = (job.get("title") or "").lower()
+    # Reject out-of-scope jobs first (gender restrictions, wrong subject).
+    for phrase in _EXCLUSION_PHRASES:
+        if phrase in title:
+            return False
     for kw in CORE_KEYWORDS:
         if kw in title:
             return True
