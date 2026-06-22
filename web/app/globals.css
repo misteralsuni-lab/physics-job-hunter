@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Physics Job Hunter — global styles.
+ *
+ * The design token CSS variables below back the semantic Tailwind colours
+ * declared in tailwind.config.ts. Both light and dark palettes are provided;
+ * dark mode activates when the user's OS prefers it.
+ */
+
+:root {
+  /* Surfaces */
+  --surface: 248 250 252; /* slate-50 */
+  --surface-muted: 241 245 249; /* slate-100 */
+  --surface-raised: 255 255 255; /* white */
+  --surface-inset: 248 250 252; /* slate-50 */
+
+  /* Ink (text) */
+  --ink: 15 23 42; /* slate-900 */
+  --ink-muted: 71 85 105; /* slate-600 */
+  --ink-faint: 100 116 139; /* slate-500 */
+
+  /* Lines / borders */
+  --line: 226 232 240; /* slate-200 */
+  --line-strong: 203 213 225; /* slate-300 */
+
+  /* Brand */
+  --brand: 37 99 235; /* blue-600 */
+  --brand-fg: 255 255 255;
+  --brand-soft: 219 234 254; /* blue-100 */
+
+  /* Status */
+  --status-active: 22 163 74; /* green-600 */
+  --status-sleeping: 100 116 139; /* slate-500 */
+  --status-running: 217 119 6; /* amber-600 */
+  --status-error: 220 38 38; /* red-600 */
+
+  /* Score bands (0-100 LLM rubric) */
+  --score-high: 22 163 74; /* green-600  — 70-100 */
+  --score-mid: 217 119 6; /* amber-600  — 40-69 */
+  --score-low: 220 38 38; /* red-600    — 1-39 */
+  --score-none: 148 163 184; /* slate-400 — unscored */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --surface: 2 6 23; /* slate-950 */
+    --surface-muted: 15 23 42; /* slate-900 */
+    --surface-raised: 15 23 42; /* slate-900 */
+    --surface-inset: 2 6 23; /* slate-950 */
+
+    --ink: 241 245 249; /* slate-100 */
+    --ink-muted: 203 213 225; /* slate-300 */
+    --ink-faint: 148 163 184; /* slate-400 */
+
+    --line: 30 41 59; /* slate-800 */
+    --line-strong: 51 65 85; /* slate-700 */
+
+    --brand: 59 130 246; /* blue-500 */
+    --brand-fg: 255 255 255;
+    --brand-soft: 30 58 138; /* blue-900 */
+
+    --status-active: 34 197 94; /* green-500 */
+    --status-sleeping: 148 163 184; /* slate-400 */
+    --status-running: 245 158 11; /* amber-500 */
+    --status-error: 248 113 113; /* red-400 */
+
+    --score-high: 34 197 94; /* green-500 */
+    --score-mid: 245 158 11; /* amber-500 */
+    --score-low: 248 113 113; /* red-400 */
+    --score-none: 100 116 139; /* slate-500 */
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-surface text-ink antialiased;
+  }
+
+  /* Visible, consistent focus ring for keyboard users across all controls. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand ring-offset-2 ring-offset-surface-raised;
+  }
+
+  /* Respect users who prefer reduced motion. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Minimum tap target — 44px square per WCAG 2.5.5. Applied to interactive
+     elements via the `tap-target` class or the Button component. */
+  .tap-target {
+    @apply min-h-tap min-w-tap inline-flex items-center justify-center;
+  }
+
+  /* Skeleton shimmer used by loading placeholders. */
+  .skeleton {
+    @apply relative overflow-hidden bg-surface-muted;
+  }
+  .skeleton::after {
+    @apply absolute inset-0 -translate-x-full;
+    content: "";
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(var(--surface-raised) / 0.6),
+      transparent
+    );
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+@layer utilities {
+  /* Hide scrollbars on horizontally scrolling chip rows while keeping scroll. */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

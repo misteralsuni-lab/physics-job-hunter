@@ -8,7 +8,7 @@ It automatically searches the web for physics teacher job postings, scores how w
 
 ## Running it by hand
 
-- **Run the job search now** — `python3 -m src.main`
+- **Run the job search now** — `cd /mnt/d/physics-job-hunter && python3 -m src.main`
   - Opens the program, searches for jobs, and shows the results right away.
 
 ---
@@ -23,7 +23,7 @@ The scheduler runs as a background service managed by systemd. It auto-starts on
 - **Watch live activity** — `journalctl --user -u physics-job-hunter.service -f`
 - **Stop it from auto-starting on boot** — `systemctl --user disable physics-job-hunter.service`
 
-The robot wakes up at 08:00, 17:00, 22:00, 22:30, and 23:00 every day.
+The robot wakes up at 06:00, 08:00, 10:00, 12:00, 14:00, 16:00, 18:00, 20:00, and 22:00 every day.
 
 ---
 

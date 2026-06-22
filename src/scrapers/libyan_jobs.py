@@ -47,9 +47,9 @@ class LibyanJobsScraper(BaseScraper):
 
             subject_list: list[str] = []
             title_lower = title.lower()
-            if any(kw in title_lower for kw in ["teacher", "teaching", "instructor", "physics", "chemistry", "biology", "science", "math", "english", "academic", "faculty", "professor", "lecturer", "education"]):
+            if any(kw in title_lower for kw in ["teacher", "teaching", "instructor", "physics", "biology", "science", "math", "english", "academic", "faculty", "professor", "lecturer", "education"]):
                 subject_list = ["Education"]
-            if any(kw in title_lower for kw in ["physics", "science", "chemistry", "biology"]):
+            if any(kw in title_lower for kw in ["physics", "science", "biology"]):
                 subject_list = ["Physics", "Science"]
 
             results.append({

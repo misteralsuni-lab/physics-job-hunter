@@ -94,14 +94,14 @@ class SupabaseClient:
     def get_unscored_from_dedup(self) -> list[dict[str, Any]]:
         return self._dedup.get_unscored()
 
-    def update_score(self, url: str, score: int, reasoning: str) -> None:
+    def update_score(self, job_id: str, score: int, reasoning: str) -> None:
         try:
             self.client.table("job_listings").update(
                 {"score": score, "score_reasoning": reasoning}
-            ).eq("url", url).execute()
+            ).eq("id", job_id).execute()
         except httpx.HTTPError as e:
-            log.warning("update_score failed for %s: %s — falling back to dedup", url, e)
-            self._dedup.update_score(url, score, reasoning)
+            log.warning("update_score failed for %s: %s — falling back to dedup", job_id, e)
+            self._dedup.update_score(job_id, score, reasoning)
 
     def get_scored_unnotified(self, min_score: int = settings.notify_score_threshold) -> list[dict[str, Any]]:
         try:
@@ -114,14 +114,14 @@ class SupabaseClient:
                 job["id"] = job["url"]
             return jobs
 
-    def mark_notified(self, urls: list[str]) -> None:
-        if not urls:
+    def mark_notified(self, ids: list[str]) -> None:
+        if not ids:
             return
         try:
-            self.client.table("job_listings").update({"notified": True}).in_("url", urls).execute()
+            self.client.table("job_listings").update({"notified": True}).in_("id", ids).execute()
         except httpx.HTTPError as e:
             log.warning("mark_notified failed: %s — falling back to dedup", e)
-            self._dedup.mark_notified(urls)
+            self._dedup.mark_notified(ids)
 
     def get_recent(self, days: int = 1) -> list[dict[str, Any]]:
         try:

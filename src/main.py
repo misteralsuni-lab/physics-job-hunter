@@ -15,6 +15,8 @@ from src.scrapers.libyan_jobs import LibyanJobsScraper
 from src.storage.supabase_client import SupabaseClient
 from src.scoring.llm_scorer import LLMScorer
 from src.generators.cover_letter import CoverLetterGenerator
+from src.agents.research_agent import ResearchAgent
+from src.agents.models import StrategicBrief
 from src.notify.telegram import send_telegram_alert
 from src.notify.email_sender import send_email_digest
 
@@ -23,7 +25,7 @@ log = logging.getLogger("job-hunter")
 
 
 CORE_KEYWORDS = {"physics", "maths", "mathematics", "science", "stem",
-                  "edexcel", "igcse", "a-level", "biology", "chemistry"}
+                  "edexcel", "igcse", "a-level", "biology"}
 
 # Jobs containing these phrases are definitively out-of-scope for a
 # Physics / Maths / Science teacher. Checked before the positive match
@@ -135,6 +137,24 @@ def send_notifications(jobs: list[dict], db: SupabaseClient | None = None) -> No
     if not top_jobs:
         log.info("No top-scoring jobs to notify")
         return
+
+    # Run strategic research for jobs scoring >= 80 ("acceptable" threshold)
+    research_candidates = [j for j in top_jobs if j.get("score", 0) >= settings.research_score_threshold]
+    if research_candidates:
+        log.info("Running strategic research for %d high-scoring job(s)...", len(research_candidates))
+        agent = ResearchAgent()
+        for job in research_candidates:
+            try:
+                brief = agent.research(
+                    school_name=job.get("school", ""),
+                    location=job.get("location", "") or job.get("city", "") or job.get("country", ""),
+                    job_description=job.get("description", ""),
+                )
+                job["research_brief"] = brief.model_dump()
+                log.info("  ✓ Research brief produced for %s at %s", job.get("title", "?"), job.get("school", "?"))
+            except Exception as e:
+                log.error("  ✗ Research agent failed for %s: %s", job.get("title", "?"), e)
+                job["research_brief"] = StrategicBrief.fallback(job.get("school", "the school")).model_dump()
 
     # Generate bespoke cover letters for every top-scoring job
     log.info("Generating cover letters for %d top-scoring jobs...", len(top_jobs))

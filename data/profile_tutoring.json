@@ -1,0 +1,23 @@
+{
+  "headline": "Online IGCSE & A-Level Physics (and Maths) tutor based in Tripoli",
+  "blurb_for_parents": "Hi — I'm Mahmoud. I teach IGCSE and A-Level Physics (and Maths) to international school students, with a focus on Pearson Edexcel and Cambridge CIE. I'm currently completing my PGCEi (international PGCE) through Liverpool John Moores University while teaching full-time at a bilingual school in Tripoli. My lessons are structured around your exam board, with past-paper drill where it actually moves grades. The first 30 minutes are always free — no charge, no obligation — so we can both see whether I'm a good fit before you commit.",
+  "qualifications_summary": "B.Sc. Mechanical Engineering (University of Tripoli, 2021). PGCEi candidate (Liverpool John Moores, 2025-2026). Four years classroom experience teaching IGCSE Physics, A-Level Physics, and secondary Maths in international schools in Tripoli.",
+  "subjects": ["Physics", "Maths"],
+  "curricula_in_scope": ["IGCSE", "A-Level"],
+  "exam_boards_in_scope": ["Pearson Edexcel", "Cambridge CIE"],
+  "languages": ["English (fluent)", "Arabic (native)"],
+  "intro_session_minutes": 30,
+  "intro_session_promise": "Free, no-obligation 30-minute session to map the syllabus gap and confirm fit before any payment.",
+  "rate_band_usd_per_hour": "35 to 60",
+  "response_sla_hours": 24,
+  "preferred_contact_channels": ["WhatsApp", "Telegram", "Email"],
+  "anti_promises_or_qualifications": [
+    "I don't guarantee specific grades — I commit to clear, structured, board-aligned teaching and honest feedback on progress.",
+    "I'm a teacher, not a homework-completion service. Ethics and exam-board rules apply."
+  ],
+  "style_notes": [
+    "Plain British English, no marketing fluff.",
+    "Parents value directness: lead with the diagnosis, not the credentials.",
+    "Gulf-parent audience tends to be results-led; UK-parent audience tends to be pastoral-led. Tone adapts via voice_warmth_target, not by hard-coding market."
+  ]
+}

@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     nvidia_api_key: str = ""
     openrouter_api_key: str = ""
     groq_api_key: str = ""
+    zenmux_api_key: str = ""
 
     scorer_provider: Literal["opencode_zen", "gemini", "nvidia", "openrouter"] = "opencode_zen"
     scorer_fallback: Literal["opencode_zen", "gemini", "nvidia", "openrouter"] = "gemini"
@@ -32,8 +33,23 @@ class Settings(BaseSettings):
     smtp_user: str = ""
     smtp_password: str = ""
 
+    firecrawl_api_key: str = ""
+
     notify_score_threshold: int = 50
+    research_score_threshold: int = 60
     schedule_time: str = "08:00"
+
+    # ---- Dual-pathway: tutoring branch (v1) ------------------------------
+    # See docs/dual-pathway.md §13 for sourcing of these defaults.
+    tutoring_min_rate_usd: float = 32.0  # ~£25/hr; below = low_budget_hold
+    tutoring_proposal_score_threshold: int = 60
+    tutoring_parse_interval_min: int = 15
+    tutoring_parse_timeout_s: int = 60
+    tutoring_in_scope_curricula: str = (
+        "IGCSE_Edexcel,IGCSE_CIE,A-Level_Edexcel,A-Level_CIE"
+    )
+    tutoring_out_of_scope_hold: bool = True
+    tutoring_rate_band_default_usd: float = 45.0  # midpoint of 35-60 band
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

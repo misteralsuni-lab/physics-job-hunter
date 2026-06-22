@@ -8,7 +8,9 @@
 - **Status**: `systemctl --user status physics-job-hunter.service`
 - **Live logs**: `journalctl --user -u physics-job-hunter.service -f`
 - **Disable auto-start**: `systemctl --user disable physics-job-hunter.service`
-- No web server or API — fully script-based pipeline.
+- **Tutoring Telegram bot (inbound)**: `systemctl --user start physics-job-hunter-bot.service`. Long-polls in a separate process; independent lifecycle from the scheduler.
+- **Bot logs**: `journalctl --user -u physics-job-hunter-bot.service -f`
+- **Front-end dashboard** at `web/` (Next.js 14 App Router, TypeScript, Tailwind, Zustand) — see Front End section below.
 - Legacy nohup command (if systemd unavailable): `nohup python3 -c "from src.scheduler.daily_run import start; start()" > /tmp/scheduler.log 2>&1 &`
 
 ## Pipeline (`src/main.py:run_pipeline()`)
@@ -17,8 +19,9 @@
 2. **Heuristic pre-filter** — `filter_relevant_jobs()` drops jobs whose title/subject don't match physics/maths/science/IGCSE/A-Level keywords
 3. **Deduplicate** — skip URLs already in Supabase (falls back to `DedupStore` SQLite at `data/dedup.db`)
 4. **Upsert** — `SupabaseClient.upsert_jobs()` into `job_listings` table; coerces empty `closing_date=""` → `None`
-5. **Score** — `LLMScorer` with Weighted Provider Registry: validates providers at startup via `validate_provider_configs()`, removes dead ones, queries survivors in weight order. Active providers: **Groq** (weight 40) → **NVIDIA** (30) → **OpenRouter** (20) → **Gemini** (15). OpenCode Zen (weight 20) is always dead (401). `SCORER_PROVIDER`/`SCORER_FALLBACK` env vars are **not consumed** — provider selection = API key presence + `PROVIDER_WEIGHTS`. If all LLM providers fail, falls back to rule-based scoring (base 30). LLM rubric: Curriculum 0-30, Subject 0-25, Location 0-20, Salary 0-15, Housing 0-10 (max 100). `visa_sponsorship` and `deadline_urgency` removed.
-6. **Notify** — Telegram (`src/notify/telegram.py`) + Email (`src/notify/email_sender.py`, Resend or SMTP) for jobs scored ≥ `settings.notify_score_threshold` (default 50, configurable via `NOTIFY_SCORE_THRESHOLD` in `.env`)
+5. **Score** — `LLMScorer` with Weighted Provider Registry: validates providers at startup via `validate_provider_configs()`, removes dead ones, queries survivors in weight order. Active providers: **Groq** (weight 40) → **NVIDIA** (30) → **OpenRouter** (20) → **OpenCode Zen** (20, dead 401) → **ZenMux** (20) → **Gemini** (15). `SCORER_PROVIDER`/`SCORER_FALLBACK` env vars are **not consumed** — provider selection = API key presence + `PROVIDER_WEIGHTS`. If all LLM providers fail, falls back to rule-based scoring (base 30). LLM rubric: Curriculum 0-30, Subject 0-25, Location 0-20, Salary 0-15, Housing 0-10 (max 100). `visa_sponsorship` and `deadline_urgency` removed.
+6. **Research** — `ResearchAgent` produces a `StrategicBrief` for every job scored ≥ `RESEARCH_SCORE_THRESHOLD` (default 60). Uses a ReAct-style LLM loop with two tools: `web_search` (DuckDuckGo) and `deep_scrape` (Firecrawl or HTTP fallback). The brief feeds `institution_facts`, `strategic_alignment`, and `recommended_angle` into the cover letter generator. Falls back to `StrategicBrief.fallback()` if research fails.
+7. **Notify** — Telegram (`src/notify/telegram.py`) + Email (`src/notify/email_sender.py`, Resend or SMTP) for jobs scored ≥ `settings.notify_score_threshold` (default 50, configurable via `NOTIFY_SCORE_THRESHOLD` in `.env`)
 
 ## Important gotchas
 
@@ -26,7 +29,8 @@
 - **`.env` has live API keys** — do not modify or commit changes
 - **`tests/test_gemini_smoke.py`** — smoke test for LLM scorer; run via `python3 tests/test_gemini_smoke.py`
 - **`scripts/test_gemini.py`** — standalone Gemini key validation
-- **No lint, typecheck, formatter, or pre-commit config** — nothing to run
+- **No lint, typecheck, formatter, or pre-commit config** for Python — nothing to run
+- **Web front-end** has `npm run typecheck` (tsc --noEmit) and `npm run lint` (next lint). Always run both before committing web changes. Use `pnpm` (v11.4.0) — `pnpm install`; if building fails with `ERR_PNPM_IGNORED_BUILDS`, create `.pnpm-approve-builds.json` with `{"unrs-resolver": true}` or run `pnpm approve-builds`
 - **`src/extractors/` is empty** — planned but not implemented
 - **`TeacherHorizonsScraper` bypassed** — detail pages require activated account
 - **`scripts/setup_supabase.sql`** — schema for `job_listings` table; must be applied manually to Supabase before first run (schema wiped on project pause/resume)
@@ -37,14 +41,16 @@
 - **`get_recent()` ignores its `days` parameter** — always queries `>= date.today()`. Minor bug, but affects any code expecting a sliding window
 - **Provider validation** — `validate_provider_configs()` has a 2-minute deadline; probes with a real scoring prompt. On 401/404 logs `[CONFIG_INVALID]` and removes provider. On any other failure (including extraction crash) logs `[CONFIG_INVALID]`
 - **Health state machine** — `ProviderRegistry` tracks ACTIVE → COOLING_DOWN (300s canary) → DEAD (3 consecutive cooldown failures). Dead providers stay removed for the session
-- **Intra-provider model rotation** — Groq: 1 model (`settings.groq_model`). NVIDIA: `nemotron-3-super-120b-a12b` (thinking + 90s timeout) → `nemotron-3-nano-30b-a3b`. OpenCode Zen: 2 models (both 401). OpenRouter/Gemini: 1 model each
+- **Intra-provider model rotation** — Groq: 1 model (`settings.groq_model`). NVIDIA: `nemotron-3-super-120b-a12b` (thinking + 90s timeout) → `nemotron-3-nano-30b-a3b`. OpenCode Zen: 2 models (both 401). ZenMux: `z-ai/glm-5.2-free` → `z-ai/glm-4.7-flash-free`. OpenRouter/Gemini: 1 model each
 - **Tenacity retry** — `tenacity.Retrying` with `wait_random_exponential(multiplier=1, max=60)`, 3 attempts per model before rotating or moving to next provider. Format: log every attempt as `[PIPELINE] Provider: groq | Model: ... | Result: Success/Fail | Attempt: N`
 - **Leaky-bucket pacing** — `batch_score()` splits into chunks of `MAX_PER_CHUNK=5` with `CHUNK_DELAY=20s`. Total pipeline ~2.5min for 20 jobs
-- **Cover letter `_resolve_provider()`** — probes Groq → NVIDIA → OpenRouter → OpenCode Zen → Gemini; `time.sleep(5)` between calls in evaluation loop to avoid 429s. Files tagged `__LLM` (AI) or `__fallback` (template)
+- **Cover letter `_resolve_provider()`** — probes Groq → NVIDIA → OpenRouter → OpenCode Zen → ZenMux → Gemini; `time.sleep(5)` between calls in evaluation loop to avoid 429s. Files tagged `__LLM` (AI) or `__fallback` (template). Cover letters now consume ``research_brief`` dict from the job for institution-aware writing
 - **TES scraper** — extracts from `__NEXT_DATA__` JSON (catches `AttributeError` for null fields); falls back to HTML parsing. Relative `canonicalUrl` → absolute via `https://www.tes.com` prepend at `src/scrapers/tes.py:108`
 - **LibyanJobs scraper** — WordPress theme; each job is `<article.loadmore-item.noo_job>`. Up to 30 jobs across 3 pages
 - **`_extract_json()` bracket walk** — used instead of brittle `json.loads()` + `removeprefix`; handles NVIDIA thinking mode interleaving reasoning text before JSON. `_extract_json_array()` for batch responses
 - Supabase DNS may be unreachable — all `SupabaseClient` methods fall through to `DedupStore` on `httpx.HTTPError`
+- Research Agent `web_search` uses DuckDuckGo HTML endpoint — may be rate-limited; `deep_scrape` falls back to HTTP if Firecrawl is unconfigured
+- `StrategicBrief.fallback()` is called when research data cannot be gathered — this does NOT crash the pipeline
 - Virtual environment at `.venv/` but deps installed globally; `pip install -e .` not required
 
 ## Configuration
@@ -53,13 +59,96 @@
 - Candidate profile: `data/profile.json`
 - `SCHEDULE_TIME` format: comma-separated 24h, e.g. `08:00,17:00,22:00,22:30,23:00`
 - `NOTIFY_SCORE_THRESHOLD` — minimum score for notifications (default 50, set in `.env`)
+- `RESEARCH_SCORE_THRESHOLD` — minimum score for deep research (default 60, set in `.env`)
 
 ## Key files
 
-- `src/scoring/llm_scorer.py` — Weighted Load Balancer, 5 providers, model rotation, tenacity, health state machine, leaky bucket, `_extract_json`/`_extract_json_array`
+- `src/scoring/llm_scorer.py` — Weighted Load Balancer, 6 providers, model rotation, tenacity, health state machine, leaky bucket, `_extract_json`/`_extract_json_array`
 - `src/storage/supabase_client.py` — Supabase CRUD; every method falls through to `DedupStore` on `httpx.HTTPError`
 - `src/storage/dedup_store.py` — SQLite tables `seen_urls` and `job_cache`; persisted across runs
-- `src/generators/cover_letter.py` — 5-provider cascade, `__LLM`/`__fallback` filename tagging
+- `src/generators/cover_letter.py` — 6-provider cascade, `__LLM`/`__fallback` filename tagging; now consumes `research_brief` dict from job for institution-aware writing
+- `src/agents/models.py` — `StrategicBrief` Pydantic model (institution_facts, strategic_alignment, recommended_angle); includes `fallback()` classmethod for graceful degradation
+- `src/agents/tools.py` — `web_search` (DuckDuckGo HTML) and `deep_scrape` (Firecrawl or HTTP fallback) tool implementations
+- `src/agents/research_agent.py` — ReAct-style tool-calling agent with 6-provider LLM cascade, MAX_STEPS=5, `_extract_json` bracket walker, synthesis fallback on exhaustion
 - `src/notify/telegram.py` — `scoring_reasoning` in alerts, cover letter attachment
 - `src/notify/email_sender.py` — Resend or SMTP with STARTTLS; must rename was `email.py` (stdlib conflict)
 - `scripts/setup_supabase.sql` — schema migration; apply manually via Supabase SQL Editor
+
+## Front End (`web/`)
+
+A Next.js 14 App Router dashboard providing a reactive, touch-friendly control panel for the pipeline.
+
+### Entrypoints
+- **Dev**: `cd web && pnpm dev` (starts on `http://localhost:3000`). Slow first compile (~100-120s on 3.8Gi RAM systems). Pages compile on demand thereafter.
+- **Build**: `cd web && pnpm build`. May require `NODE_OPTIONS="--max-old-space-size=2048"` on low-memory systems. Full build takes ~3-5min.
+- **Production**: `cd web && pnpm start`. Requires ~400MB RSS; may get OOM-killed on systems with <2Gi available RAM.
+- **Lightweight static preview**: `node /tmp/serve-static.mjs` after build. Serves pre-rendered HTML + static chunks with stub API responses. Uses ~40MB RSS; stays alive on low-memory systems. API routes return stubs (no real Supabase queries).
+- **Typecheck**: `cd web && pnpm typecheck` (tsc --noEmit) — must pass before committing
+- **Lint**: `cd web && pnpm lint` (next lint)
+
+### Routes
+| Route | Purpose |
+|-------|---------|
+| `/` | Dashboard — scored jobs with filters, sort, pagination, detail drawer. |
+| `/pipeline` | Pipeline Control — systemd status, Start/Stop/Run, live journalctl logs. |
+| `/settings` | Advisory threshold (0–100) and schedule-times editor. |
+| `/leads` | Tutoring leads — manual-entry form, status tile row, paginated table filtered by status, inline status-flip menu, expandable row showing parsed brief + proposal. |
+
+### API Routes (server-only)
+| Path | Method | Auth | Notes |
+|------|--------|------|-------|
+| `/api/jobs` | GET | — | Paginated, filtered jobs from Supabase. |
+| `/api/jobs/options` | GET | — | Distinct sources & countries for filter dropdowns. |
+| `/api/settings` | GET/POST | — | Advisory settings mirrored in `web/config.json`. |
+| `/api/pipeline/status` | GET | — | systemd `is-active` + `show` state. |
+| `/api/pipeline/start\|stop\|run` | POST | `x-admin-token` or localhost | Mutating scheduler actions. |
+| `/api/pipeline/logs` | GET | — | Recent journalctl lines (default 200). |
+| `/api/leads` | GET | — | Paginated, status-filtered list of tutoring leads. |
+| `/api/leads/counts` | GET | — | Current-calendar-month tile counts (new, proposal_sent, reply_received, paid_first_session, lost). |
+| `/api/leads/manual` | POST | `x-admin-token` or localhost | Insert a tutoring lead from the dashboard manual-entry form. |
+| `/api/leads/<id>/status` | POST | `x-admin-token` or localhost | Flip lead status to one of the seven lifecycle states. |
+| `/api/leads/<id>/status` | GET | `x-admin-token` or localhost | Download rendered proposal as plain text (Content-Disposition: attachment). |
+
+### Environment (`web/.env.local`)
+| Key | Required | Description |
+|-----|----------|-------------|
+| `SUPABASE_URL` | Yes | Project URL, e.g. `https://<ref>.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Yes | Service-role key — **server-only**, never sent to browser. |
+| `SUPABASE_ANON_KEY` | No | Currently unused; all reads via server route handlers. |
+| `PIPELINE_CWD` | No | Python project root (default `/mnt/d/physics-job-hunter`). |
+| `SYSTEMD_UNIT` | No | systemd unit name (default `physics-job-hunter.service`). |
+| `ADMIN_TOKEN` | No | Shared secret for mutating pipeline endpoints; if unset, localhost-only. |
+| `NOTIFY_SCORE_THRESHOLD` | No | Advisory threshold mirror (default 50). |
+| `SCHEDULE_TIME` | No | Advisory schedule mirror (default `08:00,17:00,22:00,22:30,23:00`). |
+
+### Key Files
+- `web/app/page.tsx` — Dashboard client component (fetches `/api/jobs`, wires `JobTable`).
+- `web/app/pipeline/page.tsx` — Pipeline Control client (status/logs polling, actions).
+- `web/app/settings/page.tsx` — Settings form (POST `/api/settings`).
+- `web/app/leads/page.tsx` — Tutoring leads: manual-entry form, status tiles, paginated table, inline status-flip menu, expandable row showing parsed brief + proposal.
+- `web/app/api/*/route.ts` — Server route handlers (Supabase, systemctl, settings store).
+- `web/lib/supabase/server.ts` — Server-only Supabase client (service role, cached).
+- `web/lib/api/guards.ts` — Auth guard for mutating pipeline routes.
+- `web/lib/api/settings-store.ts` — `web/config.json` read/write.
+- `web/lib/store/jobs.ts` — Zustand store (jobs list, filters, sort, pagination).
+- `web/lib/store/settings.ts` — Zustand store (advisory settings).
+- `web/app/components/ui/*.tsx` — Touch-friendly primitives (Button, Card, Slider, Toggle, StatusBadge, Toast, etc.).
+- `web/app/components/jobs/*.tsx` — Job table, filters, detail drawer, skeleton, score badge.
+- `web/tailwind.config.ts` — Semantic tokens (surface/ink/brand/status/score), 44px tap targets.
+- `web/globals.css` — CSS variables for tokens, base styles, accessibility.
+- `web/README.md` `.gitignore` — ignores `node_modules`, `.next`, `config.json`, `.env.local`.
+
+### Security
+- Service-role key is **server-side only** — imported via `import "server-only"` in `lib/supabase/server.ts`.
+- Mutating pipeline endpoints (`start`, `stop`, `run`) require either:
+  - `x-admin-token` header matching `ADMIN_TOKEN` env var, **or**
+  - Request originates from `127.0.0.1` / `::1` (localhost fallback).
+- All `systemctl` and `python3` spawns use argument arrays (no shell).
+
+### Accessibility & UX
+- British English spelling throughout (standardise, programme, labelling, colour, etc.).
+- Minimum 44×44 px tap targets on all interactive elements.
+- Focus rings, ARIA labels/roles, keyboard navigation.
+- `prefers-reduced-motion` respected (animations disabled).
+- Dark mode via `prefers-color-scheme`.
+- Toast notifications for async actions.

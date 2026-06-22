@@ -9,6 +9,19 @@ tmp/
 test-results/
 .understand-anything/
 
+# ── Front end (web/) ────────────────────────────────────────────────────
+web/node_modules/
+web/.next/
+web/out/
+web/build/
+web/.env
+web/.env.local
+web/.env.*.local
+web/*.log
+web/pnpm-debug.log*
+web/.vercel
+web/.DS_Store
+
 # Generated cover letter drafts (review before submitting)
 data/cover_letters/
 docs/China and Online IGCSE_A-Level Teaching.pdf
@@ -30,3 +43,10 @@ scripts/test_gemini.py
 docs/README2.md
 AGENTS.md
 AGENTS.md
+apllications/Application form 2025.26 TES.docx
+apllications/ASJ Guangzhou CV Eng. Mahmoud Alsini.txt
+apllications/apllicable school listv.txt
+.gitignore
+apllications/Application form 2025.26 TES - FILLED.docx
+data/market_intel/uae_market_video.md
+data/siddiq_reply_22jun_options.md
