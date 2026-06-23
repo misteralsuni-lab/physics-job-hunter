@@ -4,6 +4,7 @@
 // narrow screens each row collapses into a card so all fields stay legible
 // without horizontal scrolling. Clicking any row opens the detail drawer.
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import {
   ArrowDown,
   ArrowUp,
@@ -14,13 +15,20 @@ import {
 } from "lucide-react";
 import { ScoreBadge } from "./ScoreBadge";
 import { Chips } from "./Chips";
-import { JobDetailDrawer } from "./JobDetailDrawer";
 import { JobTableSkeleton } from "./JobTableSkeleton";
 import { Pagination } from "./Pagination";
 import { EmptyState } from "@/app/components/ui/EmptyState";
 import type { Job, JobSortKey, SortDirection } from "@/lib/types/job";
 import { formatBritishDate } from "@/lib/utils/cn";
 import { cn } from "@/lib/utils/cn";
+
+// Code-split the drawer (8 lucide icons + focus-trap logic) into its own
+// chunk — it only renders when a user clicks a row, so there's no need
+// to pay the parse cost on initial page load.
+const JobDetailDrawer = dynamic(
+  () => import("./JobDetailDrawer").then((m) => ({ default: m.JobDetailDrawer })),
+  { ssr: false, loading: () => null },
+);
 
 export interface JobTableProps {
   jobs: Job[];

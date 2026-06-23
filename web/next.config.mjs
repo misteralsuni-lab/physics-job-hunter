@@ -1,17 +1,21 @@
-// Next.js configuration for the Physics Job Hunter front end.
-//
-// Notes:
-// - React strict mode surfaces latent side-effect bugs early.
-// - The app is server-component first; the Supabase service-role key is only
-//   ever imported inside modules guarded by `import "server-only"`.
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // The pipeline control API routes spawn local processes; keep this app
-  // buildable on any host (the routes themselves are no-ops off-Linux).
+
+  // Trace only the deps actually imported and emit a self-contained
+  // `.next/standalone/` server.  Reduces build working-set (no full
+  // node_modules traversal) and cuts production RSS on low-memory hosts.
+  output: "standalone",
+
   experimental: {
-    // Improve type-safety of server/client boundaries.
-    typedRoutes: false,
+    // Tree-shake barrel-export libs at build time.  lucide-react ships
+    // thousands of icons via a single index; this flag makes the bundler
+    // resolve only the named imports actually used, cutting both build
+    // memory (fewer AST nodes held simultaneously) and client bundle.
+    optimizePackageImports: [
+      "lucide-react",
+      "@supabase/supabase-js",
+    ],
   },
 };
 
