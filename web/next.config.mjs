@@ -2,10 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Trace only the deps actually imported and emit a self-contained
-  // `.next/standalone/` server.  Reduces build working-set (no full
-  // node_modules traversal) and cuts production RSS on low-memory hosts.
-  output: "standalone",
+  // NOTE: `output: "standalone"` would trim the production node_modules and
+  // lower runtime RSS, but it requires symlink creation (copyTracedFiles)
+  // which fails with EPERM on Windows without admin/Developer Mode.  Re-enable
+  // only on the Linux deploy target (the systemd host documented in AGENTS.md).
 
   experimental: {
     // Tree-shake barrel-export libs at build time.  lucide-react ships
