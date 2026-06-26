@@ -19,7 +19,7 @@
 2. **Heuristic pre-filter** — `filter_relevant_jobs()` drops jobs whose title/subject don't match physics/maths/science/IGCSE/A-Level keywords
 3. **Deduplicate** — skip URLs already in Supabase (falls back to `DedupStore` SQLite at `data/dedup.db`)
 4. **Upsert** — `SupabaseClient.upsert_jobs()` into `job_listings` table; coerces empty `closing_date=""` → `None`
-5. **Score** — `LLMScorer` with Weighted Provider Registry: validates providers at startup via `validate_provider_configs()`, removes dead ones, queries survivors in weight order. Active providers: **Groq** (weight 40) → **NVIDIA** (30) → **OpenRouter** (20) → **OpenCode Zen** (20, dead 401) → **ZenMux** (20) → **Gemini** (15). `SCORER_PROVIDER`/`SCORER_FALLBACK` env vars are **not consumed** — provider selection = API key presence + `PROVIDER_WEIGHTS`. If all LLM providers fail, falls back to rule-based scoring (base 30). LLM rubric: Curriculum 0-30, Subject 0-25, Location 0-20, Salary 0-15, Housing 0-10 (max 100). `visa_sponsorship` and `deadline_urgency` removed.
+5. **Score** — `LLMScorer` with Weighted Provider Registry: validates providers at startup via `validate_provider_configs()`, removes dead ones, queries survivors in weight order. Active providers: **Groq** (weight 40) → **NVIDIA** (30) → **OpenRouter** (20) → **OpenCode Zen** (20, dead 401) → **Gemini** (15). `SCORER_PROVIDER`/`SCORER_FALLBACK` env vars are **not consumed** — provider selection = API key presence + `PROVIDER_WEIGHTS`. If all LLM providers fail, falls back to rule-based scoring (base 30). LLM rubric: Curriculum 0-30, Subject 0-25, Location 0-20, Salary 0-15, Housing 0-10 (max 100). `visa_sponsorship` and `deadline_urgency` removed.
 6. **Research** — `ResearchAgent` produces a `StrategicBrief` for every job scored ≥ `RESEARCH_SCORE_THRESHOLD` (default 60). Uses a ReAct-style LLM loop with two tools: `web_search` (DuckDuckGo) and `deep_scrape` (Firecrawl or HTTP fallback). The brief feeds `institution_facts`, `strategic_alignment`, and `recommended_angle` into the cover letter generator. Falls back to `StrategicBrief.fallback()` if research fails.
 7. **Notify** — Telegram (`src/notify/telegram.py`) + Email (`src/notify/email_sender.py`, Resend or SMTP) for jobs scored ≥ `settings.notify_score_threshold` (default 50, configurable via `NOTIFY_SCORE_THRESHOLD` in `.env`)
 
@@ -41,10 +41,10 @@
 - **`get_recent()` ignores its `days` parameter** — always queries `>= date.today()`. Minor bug, but affects any code expecting a sliding window
 - **Provider validation** — `validate_provider_configs()` has a 2-minute deadline; probes with a real scoring prompt. On 401/404 logs `[CONFIG_INVALID]` and removes provider. On any other failure (including extraction crash) logs `[CONFIG_INVALID]`
 - **Health state machine** — `ProviderRegistry` tracks ACTIVE → COOLING_DOWN (300s canary) → DEAD (3 consecutive cooldown failures). Dead providers stay removed for the session
-- **Intra-provider model rotation** — Groq: 1 model (`settings.groq_model`). NVIDIA: `nemotron-3-super-120b-a12b` (thinking + 90s timeout) → `nemotron-3-nano-30b-a3b`. OpenCode Zen: 2 models (both 401). ZenMux: `z-ai/glm-5.2-free` → `z-ai/glm-4.7-flash-free`. OpenRouter/Gemini: 1 model each
+- **Intra-provider model rotation** — Groq: 1 model (`settings.groq_model`). NVIDIA: `nemotron-3-super-120b-a12b` (thinking + 90s timeout) → `nemotron-3-nano-30b-a3b`. OpenCode Zen: 2 models (both 401). OpenRouter/Gemini: 1 model each
 - **Tenacity retry** — `tenacity.Retrying` with `wait_random_exponential(multiplier=1, max=60)`, 3 attempts per model before rotating or moving to next provider. Format: log every attempt as `[PIPELINE] Provider: groq | Model: ... | Result: Success/Fail | Attempt: N`
 - **Leaky-bucket pacing** — `batch_score()` splits into chunks of `MAX_PER_CHUNK=5` with `CHUNK_DELAY=20s`. Total pipeline ~2.5min for 20 jobs
-- **Cover letter `_resolve_provider()`** — probes Groq → NVIDIA → OpenRouter → OpenCode Zen → ZenMux → Gemini; `time.sleep(5)` between calls in evaluation loop to avoid 429s. Files tagged `__LLM` (AI) or `__fallback` (template). Cover letters now consume ``research_brief`` dict from the job for institution-aware writing
+- **Cover letter `_resolve_provider()`** — probes Groq → NVIDIA → OpenRouter → OpenCode Zen → Gemini; `time.sleep(5)` between calls in evaluation loop to avoid 429s. Files tagged `__LLM` (AI) or `__fallback` (template). Cover letters now consume ``research_brief`` dict from the job for institution-aware writing
 - **TES scraper** — extracts from `__NEXT_DATA__` JSON (catches `AttributeError` for null fields); falls back to HTML parsing. Relative `canonicalUrl` → absolute via `https://www.tes.com` prepend at `src/scrapers/tes.py:108`
 - **LibyanJobs scraper** — WordPress theme; each job is `<article.loadmore-item.noo_job>`. Up to 30 jobs across 3 pages
 - **`_extract_json()` bracket walk** — used instead of brittle `json.loads()` + `removeprefix`; handles NVIDIA thinking mode interleaving reasoning text before JSON. `_extract_json_array()` for batch responses
@@ -63,13 +63,13 @@
 
 ## Key files
 
-- `src/scoring/llm_scorer.py` — Weighted Load Balancer, 6 providers, model rotation, tenacity, health state machine, leaky bucket, `_extract_json`/`_extract_json_array`
+- `src/scoring/llm_scorer.py` — Weighted Load Balancer, 5 providers, model rotation, tenacity, health state machine, leaky bucket, `_extract_json`/`_extract_json_array`
 - `src/storage/supabase_client.py` — Supabase CRUD; every method falls through to `DedupStore` on `httpx.HTTPError`
 - `src/storage/dedup_store.py` — SQLite tables `seen_urls` and `job_cache`; persisted across runs
-- `src/generators/cover_letter.py` — 6-provider cascade, `__LLM`/`__fallback` filename tagging; now consumes `research_brief` dict from job for institution-aware writing
+- `src/generators/cover_letter.py` — 5-provider cascade, `__LLM`/`__fallback` filename tagging; now consumes `research_brief` dict from job for institution-aware writing
 - `src/agents/models.py` — `StrategicBrief` Pydantic model (institution_facts, strategic_alignment, recommended_angle); includes `fallback()` classmethod for graceful degradation
 - `src/agents/tools.py` — `web_search` (DuckDuckGo HTML) and `deep_scrape` (Firecrawl or HTTP fallback) tool implementations
-- `src/agents/research_agent.py` — ReAct-style tool-calling agent with 6-provider LLM cascade, MAX_STEPS=5, `_extract_json` bracket walker, synthesis fallback on exhaustion
+- `src/agents/research_agent.py` — ReAct-style tool-calling agent with 5-provider LLM cascade, MAX_STEPS=5, `_extract_json` bracket walker, synthesis fallback on exhaustion
 - `src/notify/telegram.py` — `scoring_reasoning` in alerts, cover letter attachment
 - `src/notify/email_sender.py` — Resend or SMTP with STARTTLS; must rename was `email.py` (stdlib conflict)
 - `scripts/setup_supabase.sql` — schema migration; apply manually via Supabase SQL Editor

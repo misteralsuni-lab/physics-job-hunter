@@ -38,6 +38,7 @@ export interface JobsState {
 const defaultFilters: JobFilters = {
   source: null,
   country: null,
+  curriculum_board: null,
   scoreMin: null,
   scoreMax: null,
   notified: null,

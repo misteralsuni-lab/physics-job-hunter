@@ -8,6 +8,9 @@ import httpx
 from src.config import settings
 from src.scrapers.tes import TESScraper
 from src.scrapers.linkedin import LinkedInScraper
+from src.scrapers.basis import BasisScraper
+from src.scrapers.dipont import DipontScraper
+from src.scrapers.toptutorjob import TopTutorJobScraper
 from src.scrapers.teacher_horizons import TeacherHorizonsScraper
 from src.scrapers.search_associates import SearchAssociatesScraper
 from src.scrapers.schrole import SchroleScraper
@@ -24,13 +27,21 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 log = logging.getLogger("job-hunter")
 
 
-CORE_KEYWORDS = {"physics", "maths", "mathematics", "science", "stem",
-                  "edexcel", "igcse", "a-level", "biology"}
+CORE_KEYWORDS = {"physics", "edexcel", "pearson", "igcse", "a-level"}
+
+# Jobs mentioning these exam boards or curricula are definitively
+# out-of-scope for an Edexcel/IGCSE/A-Level Physics specialist.
+_EXCLUDED_EXAM_BOARDS = frozenset({
+    "cambridge", "cie", "aqa", "oxford aqa", "ib",
+    "international baccalaureate", "ocr",
+    # US curriculum indicators — we don't teach these.
+    "american curriculum", "common core", "ccss", "ngss",
+    "advanced placement", "ap ", "ap,", "ap.",
+    "texas essential knowledge", "teks",
+})
 
 # Jobs containing these phrases are definitively out-of-scope for a
-# Physics / Maths / Science teacher. Checked before the positive match
-# so that e.g. "Teacher of Physical Education" or "(Female Applicants
-# Only)" is rejected even if "science" or "igcse" appears elsewhere.
+# Physics / Maths / Science teacher.
 _EXCLUSION_PHRASES = frozenset({
     "physical education",
     "pe teacher",
@@ -42,20 +53,45 @@ _EXCLUSION_PHRASES = frozenset({
     "male only",
 })
 
+# Roles that are NOT actual teaching positions — drop regardless of subject.
+_NON_TEACHER_ROLES = frozenset({
+    "teaching assistant", "cover supervisor", "wellbeing advisor",
+    "wellbeing officer", "cover manager", "cover coordinator",
+    "head of year", "pastoral", "teaching support", "learning support",
+    "examinations officer", "senior prefect",
+})
+
 
 def _is_relevant(job: dict) -> bool:
     title = (job.get("title") or "").lower()
-    # Reject out-of-scope jobs first (gender restrictions, wrong subject).
+    subject_list = [s.lower() for s in (job.get("subject") or [])]
+    curriculum_list = [c.lower() for c in (job.get("curriculum") or [])]
+    combined = f"{title} {' '.join(subject_list)} {' '.join(curriculum_list)}"
+
+    # FIRST: reject excluded exam boards (Cambridge, CIE, AQA, IB, etc.)
+    for phrase in _EXCLUDED_EXAM_BOARDS:
+        if phrase in combined:
+            return False
+
+    # Reject out-of-scope roles (gender restrictions, wrong subject area).
     for phrase in _EXCLUSION_PHRASES:
         if phrase in title:
             return False
-    for kw in CORE_KEYWORDS:
-        if kw in title:
-            return True
-    for s in (job.get("subject") or []):
-        if s.lower() in CORE_KEYWORDS or any(kw in s.lower() for kw in CORE_KEYWORDS):
-            return True
-    return False
+
+    # Drop non-teacher / support roles.  These listings can carry "IGCSE,
+    # A-Level" in the curriculum array and would otherwise sneak through.
+    for phrase in _NON_TEACHER_ROLES:
+        if phrase in title:
+            return False
+
+    # HARD REQUIREMENT: title or subject MUST mention "physics".  Without
+    # this, any teacher role that includes the words "IGCSE" or "A-Level"
+    # anywhere in the listing passes — that is how Geography / TA / Wellbeing
+    # jobs were reaching the LLM scorer and Telegram digest.
+    if "physics" not in combined:
+        return False
+
+    return True
 
 
 def filter_relevant_jobs(jobs: list[dict]) -> list[dict]:
@@ -68,7 +104,9 @@ def filter_relevant_jobs(jobs: list[dict]) -> list[dict]:
 
 
 def run_scrapers() -> list[dict]:
-    scrapers = [TESScraper(), LinkedInScraper(), SearchAssociatesScraper(), SchroleScraper(), LibyanJobsScraper()]
+    scrapers = [TESScraper(), LinkedInScraper(), BasisScraper(), DipontScraper(),
+                TopTutorJobScraper(),
+                SearchAssociatesScraper(), SchroleScraper(), LibyanJobsScraper()]
     all_jobs = []
     for scraper in scrapers:
         try:

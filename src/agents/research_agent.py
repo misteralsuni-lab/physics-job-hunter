@@ -1,5 +1,7 @@
 import json
 import logging
+import random
+import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Literal
 
@@ -179,8 +181,6 @@ class LLMClient:
             p.append(("openrouter", self._call_openrouter))
         if settings.gemini_api_key:
             p.append(("gemini", self._call_gemini))
-        if settings.zenmux_api_key:
-            p.append(("zenmux", self._call_zenmux))
         if settings.opencode_zen_api_key:
             p.append(("opencode_zen", self._call_opencode_zen))
         return p
@@ -239,21 +239,15 @@ class LLMClient:
 
     def _call_nvidia(self, prompt: str, max_tokens: int, temperature: float) -> str | None:
         for model in self._nvidia_models:
-            extra = None
-            tok = max_tokens
-            if model == settings.nvidia_model:
-                extra = {"chat_template_kwargs": {"enable_thinking": True}}
-                tok += 400
             try:
                 result = self._openai_post(
                     "https://integrate.api.nvidia.com/v1/chat/completions",
                     settings.nvidia_api_key,
                     model,
                     prompt,
-                    tok,
+                    max_tokens,
                     temperature,
                     timeout=120,
-                    extra_body=extra,
                 )
                 if result is not None:
                     return result
@@ -293,25 +287,6 @@ class LLMClient:
         except (KeyError, IndexError, TypeError) as exc:
             log.debug("Gemini research call failed: %s", exc)
             return None
-
-    def _call_zenmux(self, prompt: str, max_tokens: int, temperature: float) -> str | None:
-        for model in ("z-ai/glm-5.2-free", "z-ai/glm-4.7-flash-free"):
-            try:
-                result = self._openai_post(
-                    "https://zenmux.ai/api/v1/chat/completions",
-                    settings.zenmux_api_key,
-                    model,
-                    prompt,
-                    max_tokens,
-                    temperature,
-                    timeout=60,
-                )
-                if result is not None:
-                    return result
-            except Exception as exc:
-                log.debug("ZenMux model %s failed: %s", model, exc)
-                continue
-        return None
 
     def _call_opencode_zen(self, prompt: str, max_tokens: int, temperature: float) -> str | None:
         for model in ("deepseek-v4-flash", "deepseek-v4-pro"):
@@ -419,6 +394,11 @@ class ResearchAgent:
                 result = {"error": str(exc)}
 
             context.add_observation(action.action, action.arguments, result)
+
+            # If web_search is circuit-broken, skip remaining steps — go straight to synthesis
+            if action.action == "web_search" and result.get("error") in ("circuit_breaker_active",):
+                log.info("Research Agent: web_search circuit-broken — skipping to synthesis")
+                break
 
         log.info("Research Agent: step limit (%d) reached — synthesising from observations", self.MAX_STEPS)
         return self._synthesise(context, school_name)

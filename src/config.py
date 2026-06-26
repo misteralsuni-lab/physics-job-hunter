@@ -8,7 +8,6 @@ class Settings(BaseSettings):
     nvidia_api_key: str = ""
     openrouter_api_key: str = ""
     groq_api_key: str = ""
-    zenmux_api_key: str = ""
 
     scorer_provider: Literal["opencode_zen", "gemini", "nvidia", "openrouter"] = "opencode_zen"
     scorer_fallback: Literal["opencode_zen", "gemini", "nvidia", "openrouter"] = "gemini"

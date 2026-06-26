@@ -13,6 +13,7 @@ export interface Job {
   country: string | null;
   city: string | null;
   curriculum: string[];
+  curriculum_board: string | null;
   subject: string[];
   salary_range: string | null;
   visa_sponsorship: boolean | null;
@@ -39,6 +40,7 @@ export interface JobListResponse {
 export interface JobFilterOptions {
   sources: string[];
   countries: string[];
+  curriculum_boards: string[];
   error: string | null;
 }
 
@@ -64,9 +66,13 @@ export type JobSortKey =
 
 export type SortDirection = "asc" | "desc";
 
+// The curriculum_board field is stored inside the JSONB raw_json column.
+// We select it via a Supabase JSONB path query (->> in PostgREST).
+
 export interface JobFilters {
   source: string | null;
   country: string | null;
+  curriculum_board: string | null;
   scoreMin: number | null;
   scoreMax: number | null;
   notified: boolean | null;

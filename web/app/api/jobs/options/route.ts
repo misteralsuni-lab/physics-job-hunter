@@ -10,7 +10,7 @@ import type { JobFilterOptions } from "@/lib/types/job";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const empty: JobFilterOptions = { sources: [], countries: [], error: null };
+  const empty: JobFilterOptions = { sources: [], countries: [], curriculum_boards: [], error: null };
 
   if (!isSupabaseConfigured()) {
     return NextResponse.json<JobFilterOptions>({
@@ -22,13 +22,15 @@ export async function GET() {
   try {
     const supabase = getSupabaseServer();
 
-    const [sourceResult, countryResult] = await Promise.all([
+    const [sourceResult, countryResult, boardResult] = await Promise.all([
       supabase.from("job_listings").select("source").order("source").neq("source", null),
       supabase.from("job_listings").select("country").order("country").neq("country", null),
+      supabase.from("job_listings").select("raw_json->>curriculum_board").not("raw_json->>curriculum_board", "is", null),
     ]);
 
     if (sourceResult.error) throw sourceResult.error;
     if (countryResult.error) throw countryResult.error;
+    if (boardResult.error) throw boardResult.error;
 
     const sources = [
       ...new Set((sourceResult.data ?? []).map((row) => row.source).filter(Boolean)),
@@ -36,8 +38,15 @@ export async function GET() {
     const countries = [
       ...new Set((countryResult.data ?? []).map((row) => row.country).filter(Boolean)),
     ].sort((a, b) => a.localeCompare(b)) as string[];
+    const curriculumBoards = [
+      ...new Set(
+        (boardResult.data ?? [] as Record<string, unknown>[])
+          .map((row) => Object.values(row)[0] as string)
+          .filter(Boolean),
+      ),
+    ].sort((a: string, b: string) => a.localeCompare(b)) as string[];
 
-    return NextResponse.json<JobFilterOptions>({ sources, countries, error: null });
+    return NextResponse.json<JobFilterOptions>({ sources, countries, curriculum_boards: curriculumBoards, error: null });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error contacting Supabase.";
     return NextResponse.json<JobFilterOptions>({

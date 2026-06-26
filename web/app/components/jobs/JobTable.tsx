@@ -127,6 +127,11 @@ export function JobTable({
                     <p className="truncate text-xs text-ink-muted">
                       {job.school || "Unknown school"}
                     </p>
+                    {job.curriculum_board && (
+                      <span className="mt-0.5 inline-flex items-center rounded-md bg-brand/10 px-1.5 py-0.5 text-xs font-medium text-brand">
+                        {job.curriculum_board}
+                      </span>
+                    )}
                     {/* Mobile-only score + date */}
                     <div className="flex items-center gap-2 pt-1 md:hidden">
                       <ScoreBadge score={job.score} />

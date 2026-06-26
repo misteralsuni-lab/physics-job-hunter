@@ -50,11 +50,16 @@ export function JobDetailDrawer({ job, onClose }: JobDetailDrawerProps) {
       >
         <div className="flex items-start justify-between gap-3 border-b border-line p-4">
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
+            <div className="flex items-start gap-3">
               <ScoreBadge score={job.score} />
               {job.source && (
                 <span className="rounded-md bg-surface-muted px-1.5 py-0.5 text-xs font-medium text-ink-muted">
                   {job.source}
+                </span>
+              )}
+              {job.curriculum_board && (
+                <span className="rounded-md bg-brand/10 px-1.5 py-0.5 text-xs font-medium text-brand">
+                  {job.curriculum_board}
                 </span>
               )}
             </div>

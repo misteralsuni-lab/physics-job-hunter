@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
   const pageSize = clampInt(params.get("pageSize") ?? "25", 25, 1, 100);
   const source = params.get("source") || null;
   const country = params.get("country") || null;
+  const curriculumBoard = params.get("curriculum_board") || null;
   const minScore = parseIntRange(params.get("minScore"), 0, 100);
   const maxScore = parseIntRange(params.get("maxScore"), 0, 100);
   const notified = params.get("notified");
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
 
     // Build the count query (filters applied, no range).
     let countQuery = supabase.from("job_listings").select("*", { count: "exact", head: true });
-    countQuery = applyFilters(countQuery, { source, country, minScore, maxScore, notified, q });
+    countQuery = applyFilters(countQuery, { source, country, curriculum_board: curriculumBoard, minScore, maxScore, notified, q });
 
     const { count, error: countError } = await countQuery;
     if (countError) throw countError;
@@ -69,14 +70,22 @@ export async function GET(request: NextRequest) {
       .from("job_listings")
       .select("*")
       .order(sortKey, { ascending, nullsFirst: false });
-    dataQuery = applyFilters(dataQuery, { source, country, minScore, maxScore, notified, q });
+    dataQuery = applyFilters(dataQuery, { source, country, curriculum_board: curriculumBoard, minScore, maxScore, notified, q });
     dataQuery = dataQuery.range((page - 1) * pageSize, page * pageSize - 1);
 
     const { data, error: dataError } = await dataQuery;
     if (dataError) throw dataError;
 
+    // Extract curriculum_board from raw_json JSONB for each row.
+    const rows = (data ?? []) as (Record<string, unknown> & { raw_json?: Record<string, unknown> })[];
+    const jobs = rows.map((row) => {
+      const raw = row.raw_json ?? {};
+      const curriculumBoard = typeof raw.curriculum_board === "string" ? raw.curriculum_board : null;
+      return { ...row, curriculum_board: curriculumBoard } as unknown as Job;
+    });
+
     return NextResponse.json<JobListResponse>({
-      jobs: (data ?? []) as Job[],
+      jobs,
       total,
       page,
       pageSize,
@@ -94,6 +103,7 @@ export async function GET(request: NextRequest) {
 interface FilterArgs {
   source: string | null;
   country: string | null;
+  curriculum_board: string | null;
   minScore: number | null;
   maxScore: number | null;
   notified: string | null;
@@ -112,6 +122,7 @@ function applyFilters<T>(builder: T, args: FilterArgs): T {
   };
   if (args.source) b = b.eq!("source", args.source);
   if (args.country) b = b.eq!("country", args.country);
+  if (args.curriculum_board) b = b.eq!("raw_json->>curriculum_board", args.curriculum_board);
   if (args.minScore !== null) b = b.gte!("score", args.minScore);
   if (args.maxScore !== null) b = b.lte!("score", args.maxScore);
   if (args.notified === "true") b = b.eq!("notified", true);

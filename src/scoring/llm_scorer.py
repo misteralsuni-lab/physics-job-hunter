@@ -32,7 +32,6 @@ PROVIDER_WEIGHTS: dict[str, int] = {
     "nvidia": 30,
     "openrouter": 20,
     "opencode_zen": 20,
-    "zenmux": 20,
     "gemini": 15,
 }
 
@@ -249,11 +248,6 @@ class LLMScorer:
         if settings.opencode_zen_api_key:
             self._providers.append(("opencode_zen", self._score_via_opencode_zen, None))
 
-        # ZenMux (free tier — GLM 5.2, etc.)
-        if settings.zenmux_api_key:
-            self._providers.append(("zenmux", self._score_via_zenmux,
-                                    self._batch_score_via_zenmux))
-
         # Gemini
         if settings.gemini_api_key:
             self._providers.append(("gemini", self._score_via_gemini,
@@ -313,9 +307,6 @@ class LLMScorer:
                 if result is not None:
                     return result
             return None
-        if name == "zenmux" and self.ZENMUX_MODELS:
-            model = self.ZENMUX_MODELS[0]
-            return self._call_zenmux(model, prompt)
         if name == "gemini":
             return self._call_gemini("gemini-2.5-flash", prompt)
         return None
@@ -588,7 +579,6 @@ class LLMScorer:
     GROQ_MODELS: list[str] = []
     NVIDIA_MODELS: list[str] = []
     OPENCODE_MODELS: list[str] = ["deepseek-v4-flash", "deepseek-v4-pro"]
-    ZENMUX_MODELS: list[str] = ["z-ai/glm-5.2-free", "z-ai/glm-4.7-flash-free"]
 
     # ------------------------------------------------------------------
     #  _call_base — shared HTTP POST to any OpenAI-compatible endpoint
@@ -703,16 +693,11 @@ class LLMScorer:
     # ------------------------------------------------------------------
 
     def _call_nvidia(self, model: str, prompt: str) -> dict | None:
-        """Call NVIDIA with *model*.  Primary model uses thinking mode."""
-        extra = None
-        max_tokens = 800
-        if model == settings.nvidia_model:
-            extra = {"chat_template_kwargs": {"enable_thinking": True}}
-            max_tokens = 1200  # thinking needs more room
+        """Call NVIDIA with *model*."""
         return self._call_base(
             "https://integrate.api.nvidia.com/v1/chat/completions",
             settings.nvidia_api_key, model, prompt,
-            max_tokens=max_tokens, timeout=120, extra_body=extra,
+            max_tokens=800, timeout=120,
         )
 
     def _score_via_nvidia(self, prompt: str) -> dict | None:
@@ -774,62 +759,6 @@ class LLMScorer:
             return None
         except Exception as e:
             log.debug("OpenRouter batch failed: %s", e)
-            return None
-
-    # ------------------------------------------------------------------
-    #  Provider: ZenMux (free tier)
-    # ------------------------------------------------------------------
-
-    def _call_zenmux(self, model: str, prompt: str) -> dict | None:
-        return self._call_base(
-            "https://zenmux.ai/api/v1/chat/completions",
-            settings.zenmux_api_key, model, prompt,
-            max_tokens=2000, timeout=120,
-        )
-
-    def _score_via_zenmux(self, prompt: str) -> dict | None:
-        return self._try_models("zenmux", prompt, self.ZENMUX_MODELS, self._call_zenmux)
-
-    def _batch_score_via_zenmux(self, prompt: str, expected: int) -> list[dict] | None:
-        try:
-            resp = httpx.post(
-                "https://zenmux.ai/api/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {settings.zenmux_api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": self.ZENMUX_MODELS[0],
-                    "messages": [{"role": "user", "content": prompt}],
-                    "temperature": 0.1,
-                    "max_tokens": 2000,
-                },
-                timeout=60,
-            )
-            if resp.status_code in (401, 404):
-                log.warning("[CONFIG_INVALID] ZenMux batch rejected (HTTP %s)", resp.status_code)
-                return None
-            resp.raise_for_status()
-            content = resp.json()["choices"][0]["message"]["content"]
-            json_str = self._extract_json_array(content)
-            if json_str is None:
-                json_str = self._extract_json(content)
-                if json_str:
-                    return [json.loads(json_str)]
-                return None
-            scores = json.loads(json_str)
-            if isinstance(scores, dict):
-                scores = [scores]
-            if len(scores) != expected:
-                log.warning("ZenMux batch: expected %d scores, got %d", expected, len(scores))
-            return scores[:expected]
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code in (429, 500, 502, 503):
-                raise
-            log.warning("ZenMux batch failed: %s", e)
-            return None
-        except Exception as e:
-            log.debug("ZenMux batch failed: %s", e)
             return None
 
     # ------------------------------------------------------------------

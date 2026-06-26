@@ -37,6 +37,7 @@ export default function DashboardPage() {
   const [options, setOptions] = useState<JobFilterOptions>({
     sources: [],
     countries: [],
+    curriculum_boards: [],
     error: null,
   });
 
@@ -54,6 +55,7 @@ export default function DashboardPage() {
         params.set("dir", sortDir);
         if (filters.source) params.set("source", filters.source);
         if (filters.country) params.set("country", filters.country);
+        if (filters.curriculum_board) params.set("curriculum_board", filters.curriculum_board);
         if (filters.scoreMin !== null) params.set("minScore", String(filters.scoreMin));
         if (filters.scoreMax !== null) params.set("maxScore", String(filters.scoreMax));
         if (filters.notified === true) params.set("notified", "true");
@@ -95,7 +97,7 @@ export default function DashboardPage() {
       } catch (err) {
         if (!cancelled) {
           const message = err instanceof Error ? err.message : "Network error";
-          setOptions({ sources: [], countries: [], error: message });
+          setOptions({ sources: [], countries: [], curriculum_boards: [], error: message });
         }
       }
     }
@@ -128,6 +130,7 @@ export default function DashboardPage() {
       <JobTableFilters
         sources={options.sources}
         countries={options.countries}
+        curriculum_boards={options.curriculum_boards}
       />
 
       {loading && jobs.length === 0 ? (

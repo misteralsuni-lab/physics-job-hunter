@@ -12,12 +12,14 @@ import { cn } from "@/lib/utils/cn";
 export interface JobTableFiltersProps {
   sources: string[];
   countries: string[];
+  curriculum_boards: string[];
   className?: string;
 }
 
 export function JobTableFilters({
   sources,
   countries,
+  curriculum_boards,
   className,
 }: JobTableFiltersProps) {
   const filters = useJobsStore((s) => s.filters);
@@ -27,6 +29,7 @@ export function JobTableFilters({
   const hasActive =
     filters.source !== null ||
     filters.country !== null ||
+    filters.curriculum_board !== null ||
     filters.scoreMin !== null ||
     filters.scoreMax !== null ||
     filters.notified !== null ||
@@ -76,6 +79,14 @@ export function JobTableFilters({
           onChange={(v) => setFilters({ country: v || null })}
           options={countries}
           allLabel="All countries"
+        />
+        <FilterSelect
+          id="filter-curriculum-board"
+          label="Curriculum board"
+          value={filters.curriculum_board ?? ""}
+          onChange={(v) => setFilters({ curriculum_board: v || null })}
+          options={curriculum_boards}
+          allLabel="All boards"
         />
 
         <div className="space-y-2">
