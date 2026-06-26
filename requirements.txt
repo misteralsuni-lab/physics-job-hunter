@@ -1,0 +1,34 @@
+# Physics Job Hunter — Python dependencies.
+#
+# Virtual environment at .venv/ but AGENTS.md notes deps also resolve from
+# the global environment. Re-run ``pip install -r requirements.txt`` whenever
+# new scraping / LLM / stealth dependencies land here.
+
+# HTTP + scraping primitives
+httpx>=0.27,<1.0
+beautifulsoup4>=4.12,<5.0
+lxml>=5.0
+
+# Config + profiles
+pydantic-settings>=2.4
+
+# Resilience: tenacity for LLM provider retry chain
+tenacity>=8.2,<9.0
+
+# Stealth browser layer (added by Dual-Pathway v1: Phase 2).
+# The Module downloads but the binary must be fetched separately:
+#     python -m camoufox fetch
+# When the binary is absent or CAMOUFOX_ENABLED=0 the scrapers safely
+# degrade to ``[]`` rather than raising into the pipeline.
+camoufox[geoip]>=0.4
+
+# Optional: TLS-level impersonation fallback for non-Cloudflare WAFs.
+# TopTutorJob's primary path uses Camoufox now; curl_cffi remains on
+# LinkedIn and Dipont where TLS-only impersonation is sufficient.
+curl-cffi>=0.7
+
+# Optional SQL client for the data-engineer migration scripts. The
+# primary migration runs through the Supabase SQL editor; this is here
+# so you can re-run scripts/migrate_tutoring_leads.py from a one-off
+# container with psycopg2-binary present.
+psycopg2-binary>=2.9; python_version >= "3.12"

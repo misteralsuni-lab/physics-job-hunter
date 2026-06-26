@@ -34,6 +34,12 @@ class Settings(BaseSettings):
 
     firecrawl_api_key: str = ""
 
+    # ---- Search Associates authenticated scraper ----------------------
+    # Read from .env as SA_USERNAME / SA_PASSWORD.  When either is empty
+    # the scraper logs once and returns [] — no login attempt is made.
+    sa_username: str = ""
+    sa_password: str = ""
+
     notify_score_threshold: int = 50
     research_score_threshold: int = 60
     schedule_time: str = "08:00"
