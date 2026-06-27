@@ -15,7 +15,16 @@
 
 ## Pipeline (`src/main.py:run_pipeline()`)
 
-1. **Scrape** — `TESScraper` (works) + `LibyanJobsScraper` (works) + `LinkedInScraper` + `SearchAssociatesScraper` + `SchroleScraper` (last 3 are placeholders, return `[]`)
+1. **Scrape** — 9-scraper fleet registered in `src/main.py:run_scrapers()`:
+   - `TESScraper` (works)
+   - `LibyanJobsScraper` (works)
+   - `LinkedInScraper` (`curl_cffi` Chrome 120 fingerprint + hard `physics` pre-filter)
+   - `BasisScraper` (HTML selector probing)
+   - `DipontScraper` (`/careers/independent-schools-jobs/`)
+   - `TopTutorJobScraper` (Camoufox — Cloudflare Turnstile bypass; dormant unless `CAMOUFOX_ENABLED=1`)
+   - `SearchAssociatesScraper` (Camoufox + cookie-resume auth — dormant unless `SA_USERNAME/SA_PASSWORD` set)
+   - `TeacherHorizonsScraper` (Camoufox + cookie-resume auth — dormant unless `TH_EMAIL/TH_PASSWORD` set)
+   - `SchroleScraper` (browser lane — awaiting credentials)
 2. **Heuristic pre-filter** — `filter_relevant_jobs()` drops jobs whose title/subject don't match physics/maths/science/IGCSE/A-Level keywords
 3. **Deduplicate** — skip URLs already in Supabase (falls back to `DedupStore` SQLite at `data/dedup.db`)
 4. **Upsert** — `SupabaseClient.upsert_jobs()` into `job_listings` table; coerces empty `closing_date=""` → `None`

@@ -106,7 +106,8 @@ def filter_relevant_jobs(jobs: list[dict]) -> list[dict]:
 def run_scrapers() -> list[dict]:
     scrapers = [TESScraper(), LinkedInScraper(), BasisScraper(), DipontScraper(),
                 TopTutorJobScraper(),
-                SearchAssociatesScraper(), SchroleScraper(), LibyanJobsScraper()]
+                SearchAssociatesScraper(), TeacherHorizonsScraper(),
+                SchroleScraper(), LibyanJobsScraper()]
     all_jobs = []
     for scraper in scrapers:
         try:

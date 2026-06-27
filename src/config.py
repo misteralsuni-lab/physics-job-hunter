@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     sa_username: str = ""
     sa_password: str = ""
 
+    # ---- Teacher Horizons authenticated scraper -----------------------
+    # Read from .env as TH_EMAIL / TH_PASSWORD.  Same dormant pattern
+    # as Search Associates — empty values short-circuit to [].
+    th_email: str = ""
+    th_password: str = ""
+
     notify_score_threshold: int = 50
     research_score_threshold: int = 60
     schedule_time: str = "08:00"
