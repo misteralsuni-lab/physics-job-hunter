@@ -19,6 +19,17 @@ interface SettingsPayload {
   scheduleTimes: string[];
 }
 
+/** Reject impossible clock values like ``25:99``. */
+function isValidClockTime(value: string): boolean {
+  const [hoursStr, minutesStr] = value.split(":");
+  const hours = Number(hoursStr);
+  const minutes = Number(minutesStr);
+  if (!Number.isInteger(hours) || !Number.isInteger(minutes)) return false;
+  if (hours < 0 || hours > 23) return false;
+  if (minutes < 0 || minutes > 59) return false;
+  return true;
+}
+
 export default function SettingsPage() {
   const [threshold, setThreshold] = useState(50);
   const [timesText, setTimesText] = useState("");
@@ -83,7 +94,7 @@ export default function SettingsPage() {
     .split(",")
     .map((t) => t.trim())
     .filter(Boolean)
-    .every((t) => /^\d{2}:\d{2}$/.test(t));
+    .every((t) => /^\d{2}:\d{2}$/.test(t) && isValidClockTime(t));
 
   return (
     <div className="animate-fade-in space-y-6">

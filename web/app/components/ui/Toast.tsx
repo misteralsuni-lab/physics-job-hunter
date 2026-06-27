@@ -27,7 +27,14 @@ let nextId = 1;
 export const useToastStore = create<ToastStore>((set) => ({
   toasts: [],
   push: (kind, message) =>
-    set((s) => ({ toasts: [...s.toasts, { id: nextId++, kind, message }] })),
+    set((s) => {
+      // Generate the id inline — keeping the ``++`` outside the updater
+      // avoids the React strict-mode double-invocation bug, which would
+      // otherwise leave ``nextId`` ahead of ``toasts.length`` by 1 and
+      // produce visibly out-of-sequence numeric ids in the UI.
+      const id = nextId++;
+      return { toasts: [...s.toasts, { id, kind, message }] };
+    }),
   dismiss: (id) =>
     set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }));

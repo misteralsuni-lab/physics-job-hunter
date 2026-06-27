@@ -19,6 +19,9 @@ export default function PipelinePage() {
   const [actionLoading, setActionLoading] = useState<"start" | "stop" | "run" | null>(null);
   const [adminToken, setAdminToken] = useState("");
   const logsRef = useRef<HTMLDivElement>(null);
+  // Mounted-flag guards post-unmount setStatus calls in deferred status
+  // refreshes below; cleared on unmount via the cleanup closure.
+  const mountedRef = useRef(true);
 
   // Status poll.
   useEffect(() => {
@@ -75,6 +78,15 @@ export default function PipelinePage() {
     }
   }, [logs]);
 
+  // Unmount: flip the mounted flag so the deferred fetch in performAction
+  // becomes a no-op.  Must be the last effect to run so all other useEffect
+  // cleanup closures still see ``mountedRef.current === true``.
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   async function performAction(
     action: "start" | "stop" | "run",
     confirmMessage?: string,
@@ -92,8 +104,11 @@ export default function PipelinePage() {
       } else {
         toast.success(payload.message || `${capitalize(action)} request sent.`);
       }
-      // Refresh status quickly after an action.
+      // Refresh status quickly after an action.  Guard with ``mountedRef``
+      // so an unmount mid-500ms doesn't trigger React's "setState on
+      // unmounted component" dev-only warning.
       setTimeout(() => {
+        if (!mountedRef.current) return;
         fetch("/api/pipeline/status")
           .then((r) => r.json())
           .then(setStatus)
