@@ -19,6 +19,7 @@ Fallback policy
 from __future__ import annotations
 
 import logging
+import os
 from typing import Any
 
 from src.scrapers.browser_base import StealthBrowserScraper
@@ -65,6 +66,15 @@ class TopTutorJobScraper(StealthBrowserScraper):
     # ------------------------------------------------------------------
 
     def scrape(self, search_terms: list[str] | None = None) -> list[dict[str, Any]]:
+        # Hard kill-switch — short-circuit BEFORE any Camoufox import-chain is
+        # touched.  Default for ``CAMOUFOX_ENABLED`` is "0" (dormant) so the
+        # engine stays cold until the operator has provisioned the binary.
+        if os.getenv("CAMOUFOX_ENABLED", "0") == "0":
+            log.info(
+                "[toptutorjob] running in dormant mode (CAMOUFOX_ENABLED=0)."
+            )
+            return []
+
         all_jobs: list[dict[str, Any]] = []
         seen_urls: set[str] = set()
 

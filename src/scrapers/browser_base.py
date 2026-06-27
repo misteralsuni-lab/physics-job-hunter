@@ -9,7 +9,8 @@ even on exceptions.  Cookie persistence is wired so a future Search Associates
 adapter can re-use sessions between runs without re-authenticating.
 
 Configuration:
-    ``CAMOUFOX_ENABLED`` env var (default ``1``).  Set to ``0`` to force
+    ``CAMOUFOX_ENABLED`` env var (default ``0``).  Set to ``1`` to enable
+    the stealth browser after the binary has been provisioned.
     ``StealthBrowserScraper`` to short-circuit ``get_page_source()`` returning
     ``None`` — useful in CI where the binary is absent.
     ``CAMOUFOX_GEOIP`` env var (e.g. ``"GB"``) to anchor geoip lookups to
@@ -100,9 +101,14 @@ class StealthBrowserScraper(BaseScraper):
         fully-rendered HTML.  Returns ``None`` on any failure so callers
         degrade gracefully (we never raise into the pipeline).
         """
-        if os.environ.get("CAMOUFOX_ENABLED", "1") == "0":
-            log.warning("[%s] CAMOUFOX_ENABLED=0 — skipping stealth fetch",
-                        self.SOURCE_NAME)
+        # Kill-switch first — must short-circuit BEFORE any Camoufox Python
+        # import-chain is touched, otherwise missing-binary auto-fetch may
+        # trigger inside the engine.
+        if os.environ.get("CAMOUFOX_ENABLED", "0") == "0":
+            log.info(
+                "[%s] dormant mode (CAMOUFOX_ENABLED=0) — skipping stealth fetch.",
+                self.SOURCE_NAME,
+            )
             return None
 
         if not CAMOUFOX_AVAILABLE:
