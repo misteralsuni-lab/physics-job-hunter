@@ -13,6 +13,7 @@ from src.scrapers.dipont import DipontScraper
 from src.scrapers.toptutorjob import TopTutorJobScraper
 from src.scrapers.teacher_horizons import TeacherHorizonsScraper
 from src.scrapers.search_associates import SearchAssociatesScraper
+from src.scrapers.gulftalent import GulfTalentScraper
 from src.scrapers.schrole import SchroleScraper
 from src.scrapers.libyan_jobs import LibyanJobsScraper
 from src.storage.supabase_client import SupabaseClient
@@ -107,6 +108,7 @@ def run_scrapers() -> list[dict]:
     scrapers = [TESScraper(), LinkedInScraper(), BasisScraper(), DipontScraper(),
                 TopTutorJobScraper(),
                 SearchAssociatesScraper(), TeacherHorizonsScraper(),
+                GulfTalentScraper(),
                 SchroleScraper(), LibyanJobsScraper()]
     all_jobs = []
     for scraper in scrapers:

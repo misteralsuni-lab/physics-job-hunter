@@ -15,7 +15,7 @@
 
 ## Pipeline (`src/main.py:run_pipeline()`)
 
-1. **Scrape** — 9-scraper fleet registered in `src/main.py:run_scrapers()`:
+1. **Scrape** — 10-scraper fleet registered in `src/main.py:run_scrapers()`:
    - `TESScraper` (works)
    - `LibyanJobsScraper` (works)
    - `LinkedInScraper` (`curl_cffi` Chrome 120 fingerprint + hard `physics` pre-filter)
@@ -24,7 +24,9 @@
    - `TopTutorJobScraper` (Camoufox — Cloudflare Turnstile bypass; dormant unless `CAMOUFOX_ENABLED=1`)
    - `SearchAssociatesScraper` (Camoufox + cookie-resume auth — dormant unless `SA_USERNAME/SA_PASSWORD` set)
    - `TeacherHorizonsScraper` (Camoufox + cookie-resume auth — dormant unless `TH_EMAIL/TH_PASSWORD` set)
+   - `GulfTalentScraper` (BaseScraper, no auth — corporate Gulf board; near-zero IGCSE/A-Level yield by design)
    - `SchroleScraper` (browser lane — awaiting credentials)
+0. **Pre-flight (stealth verification)** — Before every scrape session, run `python3 stealth_browser.py`. It tests the Camoufox fingerprint against bot.sannysoft.com (the Intoli test suite). **If > 0 tests show FAIL, do not scrape** — investigate and fix the regression first. Any single failure means the fingerprint is compromised and scraping will likely hit CAPTCHAs/403s. See Stealth Browser Harness section below for details.
 2. **Heuristic pre-filter** — `filter_relevant_jobs()` drops jobs whose title/subject don't match physics/maths/science/IGCSE/A-Level keywords
 3. **Deduplicate** — skip URLs already in Supabase (falls back to `DedupStore` SQLite at `data/dedup.db`)
 4. **Upsert** — `SupabaseClient.upsert_jobs()` into `job_listings` table; coerces empty `closing_date=""` → `None`
@@ -46,8 +48,14 @@
   - `web/app/components/ui/Toast.tsx`: `id: nextId++` inside the Zustand `set` updater — React strict-mode double-invocation produced out-of-sequence IDs. Increment moved out of the updater.
   - `web/app/settings/page.tsx`: regex `^\d{2}:\d{2}$` accepted impossible clocks (`25:99`). Added `isValidClockTime()` helper (0-23 hours, 0-59 minutes).
   - `web/app/pipeline/page.tsx`: deferred `setTimeout(..., 500)` `setStatus` could call setState on unmounted component. Added `mountedRef` flag flipped at unmount.
-- **Stealth browser kill-switch** — `CAMOUFOX_ENABLED` defaults to `"0"` so the Camoufox Firefox binary (1.3 GB unpacked) is **never auto-fetched** mid-pipeline.  Default off keeps the dormant path safe; operator opts in with `CAMOUFOX_ENABLED=1` once `python -m camoufox fetch` has been run manually.
+- **Stealth browser kill-switch** — `CAMOUFOX_ENABLED` defaults to `"0"` so the Camoufox Firefox binary (1.3 GB unpacked, version 135.0.1-beta.24) is **never auto-fetched** mid-pipeline.  Default off keeps the dormant path safe; operator opts in with `CAMOUFOX_ENABLED=1` once `python -m camoufox fetch` has been run manually.
+- **Stealth browser verification harness** — `stealth_browser.py` at project root. Run before every scrape session. Validates 11 Intoli/Sannysoft tests via route-intercepted HTML injection (zstd decompression → `<script>` injection → fulfill). All 11 tests must show PASS (CSS class `passed` on DOM elements) or the scrape session is unsafe. See Stealth Browser Harness section below.
+- **Stealth browser route-injection pattern** — `bot.sannysoft.com` serves HTML with `Content-Encoding: zstd`. Camoufox's `add_init_script()` runs too late for inline page scripts. The harness uses `page.route()` interception: `route.fetch()`, `zstandard.ZstdDecompressor().stream_reader()`, inject a `<script>` before the first page `<script>`, `route.fulfill()`. Only the `window.chrome` mock + `navigator.permissions.query` override are injected — `navigator.webdriver`, `navigator.plugins`, and `navigator.languages` are already handled natively by Camoufox and must NOT be re-patched (defining them as own properties makes `_.has()` detect them).
+- **Stealth browser Camoufox cleanup** — Camoufox's background fingerprinting monitor periodically resets spoofed properties. After page load completes, `window.chrome` is deleted. This is normal and does not affect test results (the test evaluates before cleanup). When debugging, check the DOM element's CSS class (`passed`/`failed`), not `!!window.chrome` at eval time.
+- **Playwright Node.js driver patch** — the `.venv` Playwright driver (`coreBundle.js`) has been patched at two locations to handle `pageError.location` being `undefined` (Firefox crash on sannysoft page errors). The patch is permanent in the `.venv` but will be lost on `pip install --upgrade playwright`. If Camoufox crashes with a Firefox content-process error, re-apply the patch.
+- **zstandard dependency** — `zstandard` (python package) is required for stealth browser route interception (decompressing zstd-encoded HTML). Installed in `.venv` via `pip install zstandard`.
 - **`TeacherHorizonsScraper` (Phase 2)** — formerly a Playwright stub; now rebuilt on `StealthBrowserScraper` with cookie resume after recon confirmed no anonymous path exists (`/jobs` = Angular shell, `/th/api/jobs` = 401).  Read `docs/ONBOARDING.md` for the full recon table.
+- **`GulfTalentScraper` (2026-06-28)** — corporate Gulf employment board (`/api/jobs/search`, no auth).  After a second probe (GCC `country` mask `10111111000000` + combined subject + curriculum phrase), the search DOES return real teaching gigs in UAE/Saudi/Qatar/Bahrain/Oman/Kuwait — however, the keyword matcher is loose full-text and primary/homeroom dominates.  Scraper now defaults to `search_keyword=physics teacher IGCSE` and similar combined phrases + the GCC bitmask.  Expected IGCSE secondary match rate is **sparse but real**; corporate-Gulf pollution reduced vs. the unfiltered global search.  Overridable via `GT_COUNTRY_MASK` env var (set to empty string for unfiltered global search).
 - **`health_check()` on `SupabaseClient`** — probes with `SELECT id LIMIT 1` at startup; if it fails, raises `httpx.HTTPError` immediately so the pipeline falls through to in-memory scoring with local SQLite
 - **`update_score()` and `mark_notified()` filter by `url` column** — NOT by `id`. Callers pass `_job_key(job)` which returns `job["id"]` (UUID) or falls back to `job["url"]`. `update_score` was broken (filtered `id=url`, silent no-op)
 - **`import re` must be in `src/scoring/llm_scorer.py`** — `_strip_llm_wrappers()` uses `re.sub`. If the import is missing, every provider validation fails silently (caught by `except Exception`). All providers return HTTP 200 but JSON extraction crashes with `NameError`
@@ -66,6 +74,78 @@
 - Research Agent `web_search` uses DuckDuckGo HTML endpoint — may be rate-limited; `deep_scrape` falls back to HTTP if Firecrawl is unconfigured
 - `StrategicBrief.fallback()` is called when research data cannot be gathered — this does NOT crash the pipeline
 - Virtual environment at `.venv/` but deps installed globally; `pip install -e .` not required
+
+## Stealth Browser Harness (`stealth_browser.py`)
+
+Pre-flight verification script at project root. Tests the Camoufox fingerprint against `bot.sannysoft.com` (the Intoli/Sannysoft bot detection suite — the public gold standard). **Must be run before every scrape session.** If any test shows FAIL, scraping is unsafe.
+
+### Verified test suite (11 tests, all PASS as of 2026-06-29)
+
+| # | Test | Expected | Mechanism |
+|---|------|----------|-----------|
+| 1 | User Agent (Old) | PASS (Firefox UA shown) | Camoufox native |
+| 2 | WebDriver (New) | PASS (`missing (passed)`) | Camoufox native — `navigator.webdriver` is `false` on prototype, NOT an own property |
+| 3 | WebDriver Advanced | PASS | Camoufox native — no Selenium/WebDriver artefacts on `window`/`document` |
+| 4 | Chrome (New) | PASS (`present (passed)`) | Route-injected `window.chrome` mock (runtime, loadTimes, csi, app) |
+| 5 | Permissions (New) | PASS | Route-injected `navigator.permissions.query` override |
+| 6 | Plugins Length (Old) | PASS (`5`) | Camoufox native PluginArray |
+| 7 | Plugins is PluginArray | PASS | Camoufox native |
+| 8 | Languages (Old) | PASS (`en-US,en`) | Camoufox native |
+| 9 | WebGL Vendor | PASS (`Google Inc. …`) | Camoufox native (ANGLE renderer) |
+| 10 | WebGL Renderer | PASS (ANGLE string) | Camoufox native |
+| 11 | Broken Image Dimensions | PASS (`24x24`) | Camoufox native |
+
+### Architecture
+
+```
+stealth_browser.py
+  ├── page.route("https://bot.sannysoft.com/", inject_into_html)
+  │     ├── route.fetch() → zstd decompress via zstandard.ZstdDecompressor().stream_reader()
+  │     └── body.replace(b"<script", INJECT_SCRIPT + b"<script", 1) → route.fulfill()
+  ├── AsyncCamoufox(headless=False, humanize=True, os="windows", locale="en-US")
+  ├── .venv/lib/python3.14/site-packages/playwright/driver/package/lib/coreBundle.js  (patched)
+  └── ~/.cache/camoufox/  (Firefox 135.0.1-beta.24 custom build)
+```
+
+### Injected script (before any page `<script>`)
+
+```javascript
+window.chrome = {
+  runtime: {},
+  loadTimes: function() {},
+  csi: function() {},
+  app: {isInstalled: false}
+};
+navigator.permissions.query = function(p) {
+  return p.name === 'notifications'
+    ? Promise.resolve({state: Notification.permission})
+    : _origQuery(p);
+};
+```
+
+### Known behavioural notes
+
+- **Camoufox background monitor** deletes `window.chrome` after page load. Do NOT check `!!window.chrome` via `page.evaluate()` after the page settles — it will be `false`. Always check the DOM element's CSS class (`passed` vs `failed`) to determine actual test verdicts.
+- **Do NOT redefine `navigator.webdriver`** — Camoufox already has it as `false` on the prototype chain (not an own property). Using `Object.defineProperty()` creates an own property, which triggers `_.has(navigator, "webdriver")` → `true` → FAIL.
+- **Do NOT redefine `navigator.plugins` or `navigator.languages`** — same reason. Camoufox handles PluginArray and language enumeration natively.
+- **The `os="windows"` fingerprint** means the browser reports Windows NT 10.0. Some sites may cross-check this against TLS fingerprint or font enumeration. If a site-specific issue arises, test with different `os` values.
+- **`zstandard` python package** is a hard dependency for the route-injection path. It's installed in `.venv`. The main page HTML from bot.sannysoft.com is served with `Content-Encoding: zstd` via Cloudflare.
+
+### Manual verification checklist
+
+```bash
+# 1. Verify Camoufox binary is installed
+cat ~/.cache/camoufox/version.json  # should show 135.0.1-beta.24
+
+# 2. Verify zstandard is available
+.venv/bin/python3 -c "import zstandard; print('OK')"
+
+# 3. Run the harness
+.venv/bin/python3 stealth_browser.py
+
+# 4. Check output — all 11 tests must show ✅
+# If any show ❌ or CSS class "failed" — DO NOT SCRAPE
+```
 
 ## Configuration
 
