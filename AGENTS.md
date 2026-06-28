@@ -41,8 +41,13 @@
 - **No lint, typecheck, formatter, or pre-commit config** for Python — nothing to run
 - **Web front-end** has `npm run typecheck` (tsc --noEmit) and `npm run lint` (next lint). Always run both before committing web changes. Use `pnpm` (v11.4.0) — `pnpm install`; if building fails with `ERR_PNPM_IGNORED_BUILDS`, create `.pnpm-approve-builds.json` with `{"unrs-resolver": true}` or run `pnpm approve-builds`
 - **`src/extractors/` is empty** — planned but not implemented
-- **`TeacherHorizonsScraper` bypassed** — detail pages require activated account
 - **`scripts/setup_supabase.sql`** — schema for `job_listings` table; must be applied manually to Supabase before first run (schema wiped on project pause/resume)
+- **Frontend audit (2026-06-27)** — three bugs found and fixed during QA:
+  - `web/app/components/ui/Toast.tsx`: `id: nextId++` inside the Zustand `set` updater — React strict-mode double-invocation produced out-of-sequence IDs. Increment moved out of the updater.
+  - `web/app/settings/page.tsx`: regex `^\d{2}:\d{2}$` accepted impossible clocks (`25:99`). Added `isValidClockTime()` helper (0-23 hours, 0-59 minutes).
+  - `web/app/pipeline/page.tsx`: deferred `setTimeout(..., 500)` `setStatus` could call setState on unmounted component. Added `mountedRef` flag flipped at unmount.
+- **Stealth browser kill-switch** — `CAMOUFOX_ENABLED` defaults to `"0"` so the Camoufox Firefox binary (1.3 GB unpacked) is **never auto-fetched** mid-pipeline.  Default off keeps the dormant path safe; operator opts in with `CAMOUFOX_ENABLED=1` once `python -m camoufox fetch` has been run manually.
+- **`TeacherHorizonsScraper` (Phase 2)** — formerly a Playwright stub; now rebuilt on `StealthBrowserScraper` with cookie resume after recon confirmed no anonymous path exists (`/jobs` = Angular shell, `/th/api/jobs` = 401).  Read `docs/ONBOARDING.md` for the full recon table.
 - **`health_check()` on `SupabaseClient`** — probes with `SELECT id LIMIT 1` at startup; if it fails, raises `httpx.HTTPError` immediately so the pipeline falls through to in-memory scoring with local SQLite
 - **`update_score()` and `mark_notified()` filter by `url` column** — NOT by `id`. Callers pass `_job_key(job)` which returns `job["id"]` (UUID) or falls back to `job["url"]`. `update_score` was broken (filtered `id=url`, silent no-op)
 - **`import re` must be in `src/scoring/llm_scorer.py`** — `_strip_llm_wrappers()` uses `re.sub`. If the import is missing, every provider validation fails silently (caught by `except Exception`). All providers return HTTP 200 but JSON extraction crashes with `NameError`
