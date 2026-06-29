@@ -237,8 +237,9 @@ def _provider_call(prompt: str) -> str | None:
     """Try providers in priority order until one returns content.
 
     Priority mirrors ``PROVIDER_WEIGHTS`` from llm_scorer.py but the order
-    is biased toward fast/cheap for short single-shot parses (groq first,
-    then nvidia thinking model is slower so we use the backup).
+    is biased toward fast/cheap for short single-shot parses (groq then
+    a fast single-turn NVIDIA model — historically nemotron-3-nano;
+    now ``openai/gpt-oss-120b`` via NVIDIA).
     """
     candidates: list[tuple[str, Callable[[str], str | None]]] = []
 
@@ -246,7 +247,8 @@ def _provider_call(prompt: str) -> str | None:
         candidates.append((f"groq:{settings.groq_model}",
                            lambda p, m=settings.groq_model: _call_groq(p, m)))
     if settings.nvidia_api_key and settings.nvidia_backup_model:
-        # Backup nemotron is non-thinking -> faster for short parses
+        # Backup model used for short parses — chosen by operator via .env
+        # NVIDIA_BACKUP_MODEL (current default openai/gpt-oss-120b).
         candidates.append((f"nvidia:{settings.nvidia_backup_model}",
                            lambda p, m=settings.nvidia_backup_model: _call_nvidia(p, m)))
     if settings.openrouter_api_key and settings.openrouter_model:

@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     scorer_fallback: Literal["opencode_zen", "gemini", "nvidia", "openrouter"] = "gemini"
     vision_extractor: Literal["opencode_zen", "gemini", "nvidia", "openrouter"] = "nvidia"
     nvidia_model: str = "nvidia/nemotron-3-super-120b-a12b"
-    nvidia_backup_model: str = "nvidia/nemotron-3-nano-30b-a3b"
+    nvidia_backup_model: str = "openai/gpt-oss-120b"
     openrouter_model: str = "google/gemma-4-31b-it:free"
     groq_model: str = "qwen/qwen3-32b"
 
@@ -61,6 +61,8 @@ class Settings(BaseSettings):
     )
     tutoring_out_of_scope_hold: bool = True
     tutoring_rate_band_default_usd: float = 45.0  # midpoint of 35-60 band
+
+    camoufox_enabled: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 

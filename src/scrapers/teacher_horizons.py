@@ -88,9 +88,8 @@ class TeacherHorizonsScraper(StealthBrowserScraper):
         # Spec-mandated kill-switch (Phase 2 hardening).  Must run before
         # any Camoufox import chain is touched.  Default ``"0"`` so the
         # engine stays dormant unless the operator explicitly opts in.
-        import os
-        if os.environ.get("CAMOUFOX_ENABLED", "0") != "1":
-            log.info("running in dormant mode (CAMOUFOX_ENABLED != 1)")
+        if not settings.camoufox_enabled:
+            log.info("running in dormant mode (camoufox_enabled=False)")
             return []
 
         if not self._credentials_configured():
@@ -125,7 +124,6 @@ class TeacherHorizonsScraper(StealthBrowserScraper):
         with Camoufox(
             headless=self.headless, humanise=self.humanise,
             geoip=os.environ.get("CAMOUFOX_GEOIP", True),
-            screen=self._pick_screen(),
             enable_cache=False,
         ) as browser:
             context = browser.new_context()

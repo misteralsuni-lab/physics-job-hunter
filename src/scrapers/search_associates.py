@@ -56,10 +56,10 @@ class SearchAssociatesScraper(StealthBrowserScraper):
         # Hard kill-switch first — no Camoufox import-chain must be touched
         # while dormant.  Default for ``CAMOUFOX_ENABLED`` is "0" so the
         # engine stays cold until the operator has provisioned the binary.
-        if os.getenv("CAMOUFOX_ENABLED", "0") == "0":
+        if not settings.camoufox_enabled:
             log.info(
                 "[search_associates] running in dormant mode "
-                "(CAMOUFOX_ENABLED=0)."
+                "(camoufox_enabled=False)."
             )
             return []
 
@@ -91,7 +91,6 @@ class SearchAssociatesScraper(StealthBrowserScraper):
         with Camoufox(
             headless=self.headless, humanise=self.humanise,
             geoip=os.environ.get("CAMOUFOX_GEOIP", True),
-            screen=self._pick_screen(),
             enable_cache=False,
         ) as browser:
             context = browser.new_context()

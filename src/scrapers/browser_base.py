@@ -27,16 +27,19 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Generator
 
+from src.config import settings
 from src.scrapers.base import BaseScraper
 
 log = logging.getLogger(__name__)
 
 try:
     from camoufox.sync_api import Camoufox
+    from browserforge.fingerprints import Screen
     CAMOUFOX_AVAILABLE = True
 except Exception:  # pragma: no cover — binary missing or build broken
     CAMOUFOX_AVAILABLE = False
     Camoufox = None  # type: ignore[assignment]
+    Screen = None  # type: ignore[assignment]
 
 
 class StealthBrowserScraper(BaseScraper):
@@ -104,9 +107,9 @@ class StealthBrowserScraper(BaseScraper):
         # Kill-switch first — must short-circuit BEFORE any Camoufox Python
         # import-chain is touched, otherwise missing-binary auto-fetch may
         # trigger inside the engine.
-        if os.environ.get("CAMOUFOX_ENABLED", "0") == "0":
+        if not settings.camoufox_enabled:
             log.info(
-                "[%s] dormant mode (CAMOUFOX_ENABLED=0) — skipping stealth fetch.",
+                "[%s] dormant mode (camoufox_enabled=False) — skipping stealth fetch.",
                 self.SOURCE_NAME,
             )
             return None
@@ -145,7 +148,6 @@ class StealthBrowserScraper(BaseScraper):
                 headless=self.headless,
                 humanize=self.humanise,
                 geoip=os.environ.get("CAMOUFOX_GEOIP", True),
-                screen=self._pick_screen(),
                 enable_cache=False,
             )
             browser = camoufox_obj.__enter__()
@@ -165,14 +167,15 @@ class StealthBrowserScraper(BaseScraper):
     #  Internal helpers
     # ------------------------------------------------------------------
 
-    def _pick_screen(self) -> tuple[int, int]:
-        """Return a viewport from DEFAULT_VIEWPORTS keyed by SOURCE_NAME so
-        each scraper gets a stable-but-different appearance.  Real browsers
-        always have *some* stable resolution per host profile."""
+    def _pick_screen(self) -> Screen | None:
+        """Return a screen constraint from DEFAULT_VIEWPORTS keyed by SOURCE_NAME so
+        each scraper gets a stable-but-different appearance."""
         if not self.SOURCE_NAME:
-            return self.DEFAULT_VIEWPORTS[0]
-        idx = sum(ord(c) for c in self.SOURCE_NAME) % len(self.DEFAULT_VIEWPORTS)
-        return self.DEFAULT_VIEWPORTS[idx]
+            w, h = self.DEFAULT_VIEWPORTS[0]
+        else:
+            idx = sum(ord(c) for c in self.SOURCE_NAME) % len(self.DEFAULT_VIEWPORTS)
+            w, h = self.DEFAULT_VIEWPORTS[idx]
+        return Screen(min_width=w, max_width=w, min_height=h, max_height=h)
 
     def _render(
         self,

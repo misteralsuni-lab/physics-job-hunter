@@ -22,6 +22,7 @@ import logging
 import os
 from typing import Any
 
+from src.config import settings
 from src.scrapers.browser_base import StealthBrowserScraper
 
 log = logging.getLogger(__name__)
@@ -69,9 +70,9 @@ class TopTutorJobScraper(StealthBrowserScraper):
         # Hard kill-switch — short-circuit BEFORE any Camoufox import-chain is
         # touched.  Default for ``CAMOUFOX_ENABLED`` is "0" (dormant) so the
         # engine stays cold until the operator has provisioned the binary.
-        if os.getenv("CAMOUFOX_ENABLED", "0") == "0":
+        if not settings.camoufox_enabled:
             log.info(
-                "[toptutorjob] running in dormant mode (CAMOUFOX_ENABLED=0)."
+                "[toptutorjob] running in dormant mode (camoufox_enabled=False)."
             )
             return []
 

@@ -289,16 +289,32 @@ class LLMClient:
             return None
 
     def _call_opencode_zen(self, prompt: str, max_tokens: int, temperature: float) -> str | None:
-        for model in ("deepseek-v4-flash", "deepseek-v4-pro"):
+        # Single-model chain (deepseek-v4-flash-free). The previous
+        # ``deepseek-v4-pro`` and ``deepseek-v4-flash`` (paid) fallbacks
+        # were dropped on 2026-06-28 — both return 401 CreditsError for
+        # the workspace ``wrk_01KRNSES9FY5ACEMK78BKAC1QY`` (no payment
+        # method).
+        #
+        # Reasoning-mode headroom:  deepseek-v4-flash-free burns most of
+        # its output budget on ``reasoning_content`` chain-of-thought,
+        # so a plain ``max_tokens=800`` returns ``content=""``.  Empirically
+        # verified on 2026-06-28 that ``max_tokens=4096`` is enough for
+        # the model to finish reasoning and emit the visible answer
+        # (e.g. ``content: '80'`` for the IGCSE-Physics scoring prompt).
+        # Endpoint: https://opencode.ai/zen/v1/chat/completions
+        for model in ("deepseek-v4-flash-free",):
+            from src.config import settings as _s
             try:
+                # Use at least 4096 tokens to leave reasoning headroom,
+                # unless the caller already specified a higher budget.
+                budget = max(max_tokens, 4096) if max_tokens else 4096
                 result = self._openai_post(
                     "https://opencode.ai/zen/v1/chat/completions",
-                    settings.opencode_zen_api_key,
+                    _s.opencode_zen_api_key,
                     model,
                     prompt,
-                    max_tokens,
-                    temperature,
-                    timeout=30,
+                    max_tokens=budget,
+                    temperature=temperature,
                 )
                 if result is not None:
                     return result

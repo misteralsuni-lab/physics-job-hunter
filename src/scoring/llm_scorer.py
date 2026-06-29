@@ -280,8 +280,8 @@ class LLMScorer:
     # ------------------------------------------------------------------
     #  validate_provider_configs() — No-Dead-End Rule
     #  Probes each provider once. On 404/401, the provider's own method
-    #  handles backup models (e.g., NVIDIA tries nemotron-3-nano, OpenCode
-    #  Zen tries deepseek-v4-pro). If all models for a provider fail,
+    #  handles backup models (e.g., NVIDIA tries openai/gpt-oss-120b,
+    #  OpenCode Zen tries deepseek-v4-pro). If all models for a provider fail,
     #  the provider is removed from rotation for this session.
     # ------------------------------------------------------------------
 
@@ -578,7 +578,7 @@ class LLMScorer:
 
     GROQ_MODELS: list[str] = []
     NVIDIA_MODELS: list[str] = []
-    OPENCODE_MODELS: list[str] = ["deepseek-v4-flash", "deepseek-v4-pro"]
+    OPENCODE_MODELS: list[str] = ["deepseek-v4-flash-free"]
 
     # ------------------------------------------------------------------
     #  _call_base — shared HTTP POST to any OpenAI-compatible endpoint
@@ -854,9 +854,16 @@ class LLMScorer:
     # ------------------------------------------------------------------
 
     def _call_opencode_zen(self, model: str, prompt: str) -> dict | None:
+        # Reasoning-mode headroom: deepseek-v4-flash-free burns most of
+        # its output budget on ``reasoning_content`` chain-of-thought, so
+        # a plain ``max_tokens=800`` returns ``content=""``.  Empirical
+        # verification on 2026-06-28 confirmed ``max_tokens=4096`` is
+        # enough for the model to finish reasoning and emit the visible
+        # answer (``JSON {"score":..}``) for the real probe prompt.
         return self._call_base(
             "https://opencode.ai/zen/v1/chat/completions",
             settings.opencode_zen_api_key, model, prompt,
+            max_tokens=4096, timeout=120,
         )
 
     def _score_via_opencode_zen(self, prompt: str) -> dict | None:
