@@ -54,11 +54,39 @@ _EXCLUSION_PHRASES = frozenset({
 })
 
 # Roles that are NOT actual teaching positions — drop regardless of subject.
+# Title-substring match is case-insensitive.  Each phrase was added in
+# response to a specific false-positive that reached Telegram: 2026-06-29
+# "Physics Technician" (Colfe's School, Greenwich) and "Lead Teacher of
+# Biology" (The Oratory School) — both bypassed the hard-type specialty
+# filter because the title literally contained the word "physics".
+#
+# All phrases are intentionally substring-matched (containment), so
+# "Teaching Assistant in Physics" is caught by both
+# "teaching assistant" and "in physics" — defence in depth.
 _NON_TEACHER_ROLES = frozenset({
+    # Original blocker set (2026-06-28)
     "teaching assistant", "cover supervisor", "wellbeing advisor",
     "wellbeing officer", "cover manager", "cover coordinator",
     "head of year", "pastoral", "teaching support", "learning support",
     "examinations officer", "senior prefect",
+    # Lab / technician roles (added 2026-06-29 after the
+    # "Physics Technician — Colfe's School" surprise)
+    "technician", "lab technician", "science technician",
+    "stem technician", "physics lab", "physics laboratory",
+    # Management / non-teaching roles
+    "director of", "head of department", "head of physics",
+    "manager", "coordinator", "administrator",
+    # Higher-ed / non-target-school roles
+    "lecturer", "university", "researcher", "postdoc", "professor",
+    # "TA" / stand-alone abbreviations (substring " ta " or leading "ta ")
+    # Caught implicitly by "teaching assistant" mostly; "TAs" form
+    # rarely appears and is not worth a long phrase.
+    #
+    # Note: "STEM Tutor" was considered — title contains "physics" only
+    # when the broad STEM role also requires a physics specialism.  The
+    # AGENTS.md "core keywords" set intentionally leaves STEM-adjacent
+    # tutors in-scope (they may legitimately teach physics).  If
+    # false-positives climb, add "stem tutor" / "stem instructor" here.
 })
 
 

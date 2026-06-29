@@ -31,14 +31,10 @@ from src.scrapers.browser_base import StealthBrowserScraper
 log = logging.getLogger(__name__)
 
 
-# TopTutorJob is a Drupal site with a single /jobs listing page and
-# query-parameter search.  We issue one search per keyword rather than
-# relying on category URLs (which no longer exist).
-_SEARCH_TERMS: tuple[str, ...] = (
-    "physics",
-    "science",
-    "teacher",
-)
+# TopTutorJob is a Drupal site with a single /jobs listing page.
+# Cloudflare Turnstile takes ~26-40s to clear so we scrape the main
+# page once (which shows all recent listings) and let the heuristic
+# pre-filter handle subject relevance downstream.
 
 
 class TopTutorJobScraper(StealthBrowserScraper):
@@ -46,11 +42,11 @@ class TopTutorJobScraper(StealthBrowserScraper):
     BASE_URL = "https://www.toptutorjob.com"
 
     # ---- Camoufox tuning ------------------------------------------------
-    page_load_timeout_ms: int = 60000
-    # Cloudflare Turnstile takes ~26s to complete on this site.  We wait
-    # for the main content container (div.view-content) which only appears
-    # after the challenge resolves.
-    wait_after_load_ms: int = 30000
+    page_load_timeout_ms: int = 120000
+    # Cloudflare Turnstile takes ~26-40s on this site.  The goto()
+    # completes on the challenge page within seconds; we then sleep
+    # for the expected challenge duration before asserting content.
+    wait_after_load_ms: int = 45000
 
     # ------------------------------------------------------------------
     #  Public entry point
@@ -66,27 +62,23 @@ class TopTutorJobScraper(StealthBrowserScraper):
         all_jobs: list[dict[str, Any]] = []
         seen_urls: set[str] = set()
 
-        terms = search_terms or list(_SEARCH_TERMS)
-        for term in terms:
-            url = f"{self.BASE_URL}/jobs?title={term}"
-            html = self.get_page_source(
-                url,
-                wait_for_selector="div.view-content",
-                timeout_ms=60000,
-            )
-            if not html:
-                log.warning(
-                    "[toptutorjob] no HTML returned for term=%s — skipping", term,
-                )
-                continue
+        url = f"{self.BASE_URL}/jobs"
+        html = self.get_page_source(
+            url,
+            wait_for_selector="div.view-content",
+            timeout_ms=120000,
+        )
+        if not html:
+            log.warning("[toptutorjob] no HTML returned for %s", url)
+            return []
 
-            jobs = self._extract_jobs(html)
-            for j in jobs:
-                eurl = j.get("url", "")
-                if eurl and eurl not in seen_urls:
-                    seen_urls.add(eurl)
-                    j["source"] = "toptutorjob"
-                    all_jobs.append(j)
+        jobs = self._extract_jobs(html)
+        for j in jobs:
+            eurl = j.get("url", "")
+            if eurl and eurl not in seen_urls:
+                seen_urls.add(eurl)
+                j["source"] = "toptutorjob"
+                all_jobs.append(j)
 
         log.info("  → %d unique jobs from toptutorjob", len(all_jobs))
         return all_jobs
