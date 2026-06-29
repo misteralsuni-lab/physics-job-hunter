@@ -36,17 +36,27 @@ _CATEGORY_PATHS: tuple[str, ...] = (
     "/teacher-jobs/",
 )
 
-# Most plausible selectors for the eventual job-listing container.
-# Used purely as a "page rendered correctly" health-check after the Turnstile
-# wait — we don't rely on them for HTML extraction (we re-parse the returned
-# source independently with BeautifulSoup below).
+# Auto-discover candidate container tags on the live DOM.  The first
+# selector also serves as the wait sentinel passed to camoufox after
+# Turnstile clears; if it doesn't appear within 8s the scraper proceeds
+# anyway — ``_extract_jobs`` then walks this tuple top-to-bottom until a
+# selector yields any matches.
+#
+# ORDERING NOTES (last updated 2026-06-28):
+#   * ``article`` deliberately LAST as a last-ditch fallback — it matches
+#     almost every modern card grid but can also match unrelated content
+#     such as blog posts if the site adds them.
+#   * Single-class matches (``div.job`` etc) preferred over generic
+#     wrappers because the site rolls them out per-template refactor.
+#   * Update via Inspect → copy-selector in a normal browser after
+#     any visible DOM refactor on toptutorjob.com.
 _JOB_CONTAINER_SELECTORS: tuple[str, ...] = (
     "article.job",
     "article.job-listing",
     "div.job-listing",
     "li.job-item",
-    "div.job",
     ".job-card",
+    "div.job",
     "article",
 )
 
@@ -83,7 +93,14 @@ class TopTutorJobScraper(StealthBrowserScraper):
             url = f"{self.BASE_URL}{path}"
             html = self.get_page_source(
                 url,
-                wait_for_selector=self._pick_container_selector(),
+                # Use a tight wait_for_selector window so DOM drift doesn't
+                # cost us 45 seconds/page × 3 pages = 2+ minutes of pipeline
+                # wall-clock for zero rows.  The downstream ``_extract_jobs``
+                # already probes _JOB_CONTAINER_SELECTORS sequentially, so
+                # whether the wait succeeds or fails we still recover any
+                # matching cards.  Short timeout keeps the budget honest.
+                wait_for_selector=_JOB_CONTAINER_SELECTORS[0],
+                timeout_ms=8000,
             )
             if not html:
                 log.warning(
@@ -105,12 +122,6 @@ class TopTutorJobScraper(StealthBrowserScraper):
     # ------------------------------------------------------------------
     #  HTML extraction (BeautifulSoup)
     # ------------------------------------------------------------------
-
-    def _pick_container_selector(self) -> str | None:
-        """Return the first selector we believe is on a real listing page.
-        If the live site reorganises its DOM only the preferred selector
-        changes — extraction itself uses a fallback chain."""
-        return _JOB_CONTAINER_SELECTORS[0]
 
     def _extract_jobs(self, html: str) -> list[dict[str, Any]]:
         """Parse *html* and pull job cards out of the page.
