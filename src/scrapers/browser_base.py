@@ -147,8 +147,10 @@ class StealthBrowserScraper(BaseScraper):
             camoufox_obj = Camoufox(
                 headless=self.headless,
                 humanize=self.humanise,
+                os="windows",
+                locale="en-US",
                 geoip=os.environ.get("CAMOUFOX_GEOIP", True),
-                enable_cache=False,
+                enable_cache=True,
             )
             browser = camoufox_obj.__enter__()
             yield camoufox_obj, browser
@@ -205,6 +207,13 @@ class StealthBrowserScraper(BaseScraper):
 
                 # Let Turnstile callbacks finish before asserting content.
                 page.wait_for_timeout(self.wait_after_load_ms)
+
+                # If Turnstile redirected us during the wait, wait for the
+                # new navigation to finish before reading content/selectors.
+                try:
+                    page.wait_for_load_state("domcontentloaded", timeout=10000)
+                except Exception:
+                    pass
 
                 if wait_for_selector:
                     try:
