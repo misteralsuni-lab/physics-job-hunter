@@ -66,8 +66,11 @@ class DipontScraper(BaseScraper):
             if closing == "":
                 closing = None
 
-            # Curriculum starts empty — must NOT be guessed as
-            # ["IGCSE", "A-Level"] until we can prove it from the listing.
+            # Subject / curriculum: NEVER pre-tag.  The hard-coded
+            # curriculum_board="Edexcel" you may see in earlier revisions
+            # has been removed — it lied about every Dipont listing in
+            # exactly the same way the subject=Physics default used to.
+            # Both fields must derive from the listing *text* or stay empty.
             results.append({
                 "title": title,
                 "url": self.absolute_url(url),
@@ -76,11 +79,15 @@ class DipontScraper(BaseScraper):
                 "country": "",
                 "salary_range": "",
                 "closing_date": closing,
-                "subject": ["Physics"],
+                "subject": (
+                    ["Physics"] if "physics" in (title or "").lower() else []
+                ),
                 "curriculum": [],
                 "job_type": "",
                 "provider": "dipont",
-                "curriculum_board": "Edexcel",
+                "curriculum_board": (
+                    "Edexcel" if "edexcel" in (title or "").lower() else None
+                ),
             })
 
         return results

@@ -85,7 +85,17 @@ class TESScraper(BaseScraper):
                 "salary_range": "",
                 "closing_date": "",
                 "country": "",
-                "subject": ["Physics"],
+                # Subject: never pre-tag.  Only mark "Physics" when the
+                # title literally contains the word; otherwise leave the
+                # filter empty so the pipeline's hard-physics check rejects
+                # the listing.  This was previously hardcoded
+                # ``["Physics"]`` here which silently tagged every TES
+                # listing as a physics role (incl. Biology, Geography,
+                # etc.); the hard filter was then bypassed by the
+                # scraper's lie.
+                "subject": (
+                    ["Physics"] if "physics" in (self.extract_text(title_el) or "").lower() else []
+                ),
                 "curriculum": [],
             })
         return results
@@ -108,7 +118,17 @@ class TESScraper(BaseScraper):
         if url.startswith("/"):
             url = f"https://www.tes.com{url}"
 
-        subject_list = ["Physics"]
+        # Subject: never pre-tag.  Only mark "Physics" when the
+        # title literally contains the word "physics".  Hardcoding this
+        # branch once created a silent false-positive chain — every TES
+        # listing (Biology, Geography, TAs, etc.) was mis-stamped as
+        # Physics to satisfy the heuristic filter, defeating the
+        # project's hard-typesetting specialty-check guarantee.
+        subject_list: list[str] = []
+        if "physics" in title.lower():
+            subject_list.append("Physics")
+        # Surface "Science" only when the title says so verbatim — this
+        # is conservative so we don't over-tag cross-discipline listings.
         if "science" in title.lower():
             subject_list.append("Science")
 

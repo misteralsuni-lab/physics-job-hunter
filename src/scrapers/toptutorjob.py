@@ -1,12 +1,16 @@
 """
 TopTutorJob.com scraper.
 Source: https://www.toptutorjob.com/  — international tutor / teaching jobs,
-strong focus on Asia (China / Hong Kong / Singapore / UAE / Qatar / KSA).
+strong focus on Asia (China).
 
 Built on ``StealthBrowserScraper`` (Camoufox / hardened Firefox) because the
 site sits behind Cloudflare Turnstile — curl_cffi TLS impersonation returns
 HTTP 403 on anonymous requests.  Camoufox executes the Turnstile JS in a
-real browser engine, which resolves the challenge in normal cases.
+real browser engine, which resolves the challenge after ~26s.
+
+The site runs Drupal 11.  Job listings are rendered server-side in a flat
+``<ul>`` with each job in an ``<li>``.  No client-side rendering or API
+endpoint is available for job data.
 
 Fallback policy
 ---------------
@@ -19,7 +23,6 @@ Fallback policy
 from __future__ import annotations
 
 import logging
-import os
 from typing import Any
 
 from src.config import settings
@@ -28,36 +31,13 @@ from src.scrapers.browser_base import StealthBrowserScraper
 log = logging.getLogger(__name__)
 
 
-# TopTutorJob exposes a category filter at job-board level.  These three
-# categories cover direct physics / science / education feed.
-_CATEGORY_PATHS: tuple[str, ...] = (
-    "/physics-jobs/",
-    "/science-jobs/",
-    "/teacher-jobs/",
-)
-
-# Auto-discover candidate container tags on the live DOM.  The first
-# selector also serves as the wait sentinel passed to camoufox after
-# Turnstile clears; if it doesn't appear within 8s the scraper proceeds
-# anyway — ``_extract_jobs`` then walks this tuple top-to-bottom until a
-# selector yields any matches.
-#
-# ORDERING NOTES (last updated 2026-06-28):
-#   * ``article`` deliberately LAST as a last-ditch fallback — it matches
-#     almost every modern card grid but can also match unrelated content
-#     such as blog posts if the site adds them.
-#   * Single-class matches (``div.job`` etc) preferred over generic
-#     wrappers because the site rolls them out per-template refactor.
-#   * Update via Inspect → copy-selector in a normal browser after
-#     any visible DOM refactor on toptutorjob.com.
-_JOB_CONTAINER_SELECTORS: tuple[str, ...] = (
-    "article.job",
-    "article.job-listing",
-    "div.job-listing",
-    "li.job-item",
-    ".job-card",
-    "div.job",
-    "article",
+# TopTutorJob is a Drupal site with a single /jobs listing page and
+# query-parameter search.  We issue one search per keyword rather than
+# relying on category URLs (which no longer exist).
+_SEARCH_TERMS: tuple[str, ...] = (
+    "physics",
+    "science",
+    "teacher",
 )
 
 
@@ -66,20 +46,17 @@ class TopTutorJobScraper(StealthBrowserScraper):
     BASE_URL = "https://www.toptutorjob.com"
 
     # ---- Camoufox tuning ------------------------------------------------
-    page_load_timeout_ms: int = 45000
-    # TopTutorJob uses a fairly aggressive Cloudflare setup.  Give Turnstile
-    # time to execute its challenge script + redirect to the listing page
-    # before we ask Playwright to assert a selector.
-    wait_after_load_ms: int = 5500
+    page_load_timeout_ms: int = 60000
+    # Cloudflare Turnstile takes ~26s to complete on this site.  We wait
+    # for the main content container (div.view-content) which only appears
+    # after the challenge resolves.
+    wait_after_load_ms: int = 30000
 
     # ------------------------------------------------------------------
     #  Public entry point
     # ------------------------------------------------------------------
 
     def scrape(self, search_terms: list[str] | None = None) -> list[dict[str, Any]]:
-        # Hard kill-switch — short-circuit BEFORE any Camoufox import-chain is
-        # touched.  Default for ``CAMOUFOX_ENABLED`` is "0" (dormant) so the
-        # engine stays cold until the operator has provisioned the binary.
         if not settings.camoufox_enabled:
             log.info(
                 "[toptutorjob] running in dormant mode (camoufox_enabled=False)."
@@ -89,22 +66,17 @@ class TopTutorJobScraper(StealthBrowserScraper):
         all_jobs: list[dict[str, Any]] = []
         seen_urls: set[str] = set()
 
-        for path in _CATEGORY_PATHS:
-            url = f"{self.BASE_URL}{path}"
+        terms = search_terms or list(_SEARCH_TERMS)
+        for term in terms:
+            url = f"{self.BASE_URL}/jobs?title={term}"
             html = self.get_page_source(
                 url,
-                # Use a tight wait_for_selector window so DOM drift doesn't
-                # cost us 45 seconds/page × 3 pages = 2+ minutes of pipeline
-                # wall-clock for zero rows.  The downstream ``_extract_jobs``
-                # already probes _JOB_CONTAINER_SELECTORS sequentially, so
-                # whether the wait succeeds or fails we still recover any
-                # matching cards.  Short timeout keeps the budget honest.
-                wait_for_selector=_JOB_CONTAINER_SELECTORS[0],
-                timeout_ms=8000,
+                wait_for_selector="div.view-content",
+                timeout_ms=60000,
             )
             if not html:
                 log.warning(
-                    "[toptutorjob] no HTML returned for %s — skipping", path,
+                    "[toptutorjob] no HTML returned for term=%s — skipping", term,
                 )
                 continue
 
@@ -124,99 +96,86 @@ class TopTutorJobScraper(StealthBrowserScraper):
     # ------------------------------------------------------------------
 
     def _extract_jobs(self, html: str) -> list[dict[str, Any]]:
-        """Parse *html* and pull job cards out of the page.
+        """Parse the Drupal 11 job listing page.
 
-        Extraction logic:
-          * probe a handful of likely containers (covers the current site
-            themes and most likely refactors);
-          * for each card grab title via common heading/text patterns;
-          * infer school, location, and URL;
-          * leave curriculum empty so downstream ``_is_relevant()`` decides.
+        DOM structure (2026-06-29):
+          div.view-content > div.item-list > ul > li
+            div.job-card
+              div.job-card-top-left
+                div.views-field-title > a[href*="/job/"]    ← title + URL
+                div.job-card-salary > a                      ← salary range
+                div.job-card-province                         ← city, province
+              div.job-card-bottom
+                div.bottom > div.bottom-school
+                  a[href*="/school/"] > span.school-title    ← school name
+                div.bottom-target-date                        ← start date
         """
         from bs4 import BeautifulSoup
         soup = BeautifulSoup(html, "lxml")
 
-        cards = []
-        for sel in _JOB_CONTAINER_SELECTORS:
-            found = soup.select(sel)
-            if found and len(found) >= 2:
-                cards = found
-                break
-
-        # If a generic container matched but didn't yield >=2 cards we
-        # accept single-card matches only when the selector is highly
-        # specific (otherwise we'd extract nav links).
-        if not cards:
+        # Each job is an <li> inside the view-content list.
+        card_els = soup.select("div.view-content div.item-list ul > li")
+        if not card_els:
             return []
-
         results: list[dict[str, Any]] = []
-        for card in cards:
-            link_el = card.select_one("h2 a, h3 a, .job-title a, a.job-link, a[href]")
-            if not link_el:
+        for li in card_els:
+            title_el = li.select_one(
+                "div.job-card-top-left div.views-field-title a[href]"
+            )
+            if not title_el:
                 continue
 
-            title = self.extract_text(link_el).strip()
+            title = self.extract_text(title_el).strip()
             if not title or len(title) < 4:
                 continue
 
-            href = self.extract_attr(link_el, "href")
+            href = self.extract_attr(title_el, "href")
             if not href:
                 continue
-            # Drop nav/category/manufactured noise: keep only links that
-            # look like a job post.
-            href_lower = href.lower()
-            if not (
-                "/job" in href_lower
-                or "/tutor" in href_lower
-                or "/vacancy" in href_lower
-            ):
-                continue
+            job_url = self.absolute_url(href)
 
+            # Salary: inside job-card-salary, the anchor text is the range
+            salary = ""
+            salary_el = li.select_one("div.job-card-salary a, div.job-card-salary")
+            if salary_el:
+                salary = self.extract_text(salary_el).strip()
+
+            # Location: "City,Province" inside job-card-province.
+            # Site is exclusively China-based so country is always "China".
+            location = ""
+            loc_el = li.select_one("div.job-card-province")
+            if loc_el:
+                location = self.extract_text(loc_el).strip()
+                location = location.replace(",", ", ").strip()
+
+            country = "China"
+
+            # School name: span.school-title inside bottom-school
             school = ""
-            school_el = card.select_one(
-                ".company, .employer, .school, .client, .organization"
-            )
+            school_el = li.select_one("div.bottom-school span.school-title")
             if school_el:
-                school = self.extract_text(school_el)
+                school = self.extract_text(school_el).strip()
 
-            location_el = card.select_one(
-                ".location, .job-location, .meta-location, .place"
-            )
-            location = self.extract_text(location_el) if location_el else ""
-
-            country = ""
-            if location:
-                country = location.split(",")[-1].strip()
-
-            # Closing date: TopTutorJob typically displays a "Posted ..."
-            # rather than a hard closing date.  Capture it for completeness
-            # but treat as posted_at downstream rather than deadline.
+            # Start date: bottom-target-date
             closing_date = None
-            closing_el = card.select_one(
-                ".closing-date, .deadline, .closing, .apply-by"
-            )
-            if closing_el:
-                raw = self.extract_text(closing_el).strip()
-                if raw and raw.lower() not in ("", "n/a", "none"):
+            date_el = li.select_one("div.bottom-target-date")
+            if date_el:
+                raw = self.extract_text(date_el).strip()
+                if raw:
                     closing_date = raw
 
-            # Subject: only claim "Physics" when the title actually says so.
-            # Curriculum: empty by default — never guess; the pre-filter
-            # and LLM scorer decide.
             results.append({
                 "title": title,
-                "url": self.absolute_url(href),
+                "url": job_url,
                 "school": school,
                 "location": location,
                 "country": country,
-                "salary_range": "",
+                "salary_range": salary,
                 "closing_date": closing_date,
                 "subject": ["Physics"] if "physics" in title.lower() else [],
                 "curriculum": [],
                 "job_type": "",
                 "provider": "toptutorjob",
-                # We can't reliably infer the board from a card fragment
-                # alone — leave to downstream research / manual fill-in.
                 "curriculum_board": None,
             })
 

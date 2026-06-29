@@ -8,7 +8,6 @@ import httpx
 from src.config import settings
 from src.scrapers.tes import TESScraper
 from src.scrapers.linkedin import LinkedInScraper
-from src.scrapers.basis import BasisScraper
 from src.scrapers.dipont import DipontScraper
 from src.scrapers.toptutorjob import TopTutorJobScraper
 from src.scrapers.teacher_horizons import TeacherHorizonsScraper
@@ -105,7 +104,7 @@ def filter_relevant_jobs(jobs: list[dict]) -> list[dict]:
 
 
 def run_scrapers() -> list[dict]:
-    scrapers = [TESScraper(), LinkedInScraper(), BasisScraper(), DipontScraper(),
+    scrapers = [TESScraper(), LinkedInScraper(), DipontScraper(),
                 TopTutorJobScraper(),
                 SearchAssociatesScraper(), TeacherHorizonsScraper(),
                 GulfTalentScraper(),

@@ -45,12 +45,26 @@ class LibyanJobsScraper(BaseScraper):
             closing = self.extract_text(article.select_one("span.job-date__closing"))
             category = self.extract_text(article.select_one("span.job-category"))
 
+            # Subject tagging: never pre-stamp.  Both intermediate rules
+            # used to list ``["Physics", "Science"]`` whenever the title
+            # mentioned *any* keyword from a wide "teacher / academic"
+            # bucket — that quietly classified every teacher-shaped job
+            # as a Physics role, defeating the heuristic filter.  Now we
+            # only tag when the **literal word** "physics" or "biology"
+            # appears in the title.
             subject_list: list[str] = []
             title_lower = title.lower()
-            if any(kw in title_lower for kw in ["teacher", "teaching", "instructor", "physics", "biology", "science", "math", "english", "academic", "faculty", "professor", "lecturer", "education"]):
-                subject_list = ["Education"]
-            if any(kw in title_lower for kw in ["physics", "science", "biology"]):
-                subject_list = ["Physics", "Science"]
+            if "physics" in title_lower:
+                subject_list.append("Physics")
+            elif "science" in title_lower.split():
+                # Conservative: "Science Teacher" only counts when the
+                # word stands alone (whole-token match), avoiding
+                # "Physical Education" or "Earth Sciences" false positives.
+                subject_list.append("Science")
+            elif "biology" in title_lower.split():
+                subject_list.append("Biology")
+            elif "math" in title_lower.split():
+                subject_list.append("Mathematics")
 
             results.append({
                 "title": title,
