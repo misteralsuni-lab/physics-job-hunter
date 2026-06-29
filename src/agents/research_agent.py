@@ -172,17 +172,20 @@ class LLMClient:
     # --------------------------------------------------------------
 
     def _providers(self) -> list[tuple[str, Callable]]:
+        # Provider cascade priority (re-ordered 2026-06-29 to match the
+        # project-wide LLM weights: opencode_zen → nvidia → groq →
+        # openrouter → gemini).
         p: list[tuple[str, Callable]] = []
-        if settings.groq_api_key:
-            p.append(("groq", self._call_groq))
+        if settings.opencode_zen_api_key:
+            p.append(("opencode_zen", self._call_opencode_zen))
         if settings.nvidia_api_key and settings.nvidia_api_key != "nvapi-":
             p.append(("nvidia", self._call_nvidia))
+        if settings.groq_api_key:
+            p.append(("groq", self._call_groq))
         if settings.openrouter_api_key:
             p.append(("openrouter", self._call_openrouter))
         if settings.gemini_api_key:
             p.append(("gemini", self._call_gemini))
-        if settings.opencode_zen_api_key:
-            p.append(("opencode_zen", self._call_opencode_zen))
         return p
 
     # --------------------------------------------------------------

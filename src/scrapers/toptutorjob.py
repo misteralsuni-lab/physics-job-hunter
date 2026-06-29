@@ -42,6 +42,7 @@ class TopTutorJobScraper(StealthBrowserScraper):
     BASE_URL = "https://www.toptutorjob.com"
 
     # ---- Camoufox tuning ------------------------------------------------
+    headless: bool = True
     page_load_timeout_ms: int = 120000
     # Cloudflare Turnstile takes ~26-40s on this site.  The goto()
     # completes on the challenge page within seconds; we then sleep
