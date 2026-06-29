@@ -25,14 +25,18 @@ DEADLINE_WITHIN_7_DAYS = 15
 DEADLINE_WITHIN_14_DAYS = 10
 DEADLINE_WITHIN_30_DAYS = 5
 
-# Provider RPM weights (higher = more capacity share)
-# Groq is fastest, so it gets highest weight (primary provider).
+# Provider RPM weights (higher = more capacity share).
+# Re-ordered 2026-06-29 so OpenCode Zen (free tier deepseek-v4-flash-free)
+# is PRIMARY, NVIDIA Nemotron-3-Super + GPT-OSS-120B is SECONDARY, and
+# Groq is TERTIARY.  The reasoning: the free tier is cheap, NVIDIA's
+# thinking-mode models add tokens of latency and Gemini/OpenRouter are
+# the historically-most-cooldowned providers in this codebase.
 PROVIDER_WEIGHTS: dict[str, int] = {
-    "groq": 40,
+    "opencode_zen": 40,
     "nvidia": 30,
-    "openrouter": 20,
-    "opencode_zen": 20,
-    "gemini": 15,
+    "groq": 20,
+    "openrouter": 15,
+    "gemini": 10,
 }
 
 JOB_SCORING_PROMPT = """\
