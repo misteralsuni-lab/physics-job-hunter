@@ -144,12 +144,14 @@ class StealthBrowserScraper(BaseScraper):
         camoufox_obj = None
         browser = None
         try:
+            _geoip_raw = os.environ.get("CAMOUFOX_GEOIP")
+            _geoip = _geoip_raw.lower() in ("true", "1", "yes") if _geoip_raw else True
             camoufox_obj = Camoufox(
                 headless=self.headless,
                 humanize=self.humanise,
                 os="windows",
                 locale="en-US",
-                geoip=os.environ.get("CAMOUFOX_GEOIP", True),
+                geoip=_geoip,
                 enable_cache=True,
             )
             browser = camoufox_obj.__enter__()
@@ -205,32 +207,76 @@ class StealthBrowserScraper(BaseScraper):
                 page.set_default_timeout(timeout_ms or self.page_load_timeout_ms)
                 page.goto(url, wait_until="domcontentloaded")
 
-                # Let Turnstile callbacks finish before asserting content.
-                page.wait_for_timeout(self.wait_after_load_ms)
+                # ------------------------------------------------------------------
+                #  Wait for Turnstile / hCaptcha to resolve.
+                #  Cloudflare may close the challenge page and open a new page after
+                #  verification — handle TargetClosedError and retry.
+                # ------------------------------------------------------------------
+                def _find_live_page() -> Any | None:
+                    """Return a live page from the context, waiting up to 3s."""
+                    import time
+                    deadline = time.time() + 3
+                    while time.time() < deadline:
+                        for p in ctx.pages:
+                            try:
+                                _ = p.title()
+                                return p
+                            except Exception:
+                                continue
+                        time.sleep(0.2)
+                    return None
 
-                # If Turnstile redirected us during the wait, wait for the
-                # new navigation to finish before reading content/selectors.
+                # Phase 1: wait for Turnstile, catching page closures
+                try:
+                    page.wait_for_timeout(self.wait_after_load_ms)
+                except Exception:
+                    live = _find_live_page()
+                    if live is not None:
+                        page = live
+
+                # Phase 2: let any redirect navigation settle
                 try:
                     page.wait_for_load_state("domcontentloaded", timeout=10000)
                 except Exception:
                     pass
 
+                # Phase 3: wait for content selector (with page-redirect retry)
                 if wait_for_selector:
-                    try:
-                        page.wait_for_selector(
-                            wait_for_selector,
-                            timeout=timeout_ms or self.page_load_timeout_ms,
-                        )
-                    except Exception as exc:
-                        log.warning(
-                            "[%s] selector %r not found on %s: %s",
-                            self.SOURCE_NAME, wait_for_selector, url, exc,
-                        )
-                        return page.content()
+                    for attempt in range(3):
+                        try:
+                            page.wait_for_selector(
+                                wait_for_selector,
+                                timeout=timeout_ms or self.page_load_timeout_ms,
+                            )
+                            break  # success
+                        except Exception as exc:
+                            if attempt >= 2:
+                                log.warning(
+                                    "[%s] selector %r not found on %s: %s",
+                                    self.SOURCE_NAME, wait_for_selector, url, exc,
+                                )
+                                # Try final page.content() from any live page
+                                live = _find_live_page()
+                                if live is not None:
+                                    return live.content()
+                                return None
+                            # Page may have been closed — try to recover
+                            live = _find_live_page()
+                            if live is not None:
+                                page = live
+                            else:
+                                # Create a fresh page as last resort
+                                page = ctx.new_page()
+                                page.set_default_timeout(timeout_ms or self.page_load_timeout_ms)
+                                page.goto(url, wait_until="domcontentloaded")
+                                page.wait_for_timeout(min(self.wait_after_load_ms, 15000))
 
                 return page.content()
             finally:
-                page.close()
+                try:
+                    page.close()
+                except Exception:
+                    pass
         finally:
             ctx.close()
 

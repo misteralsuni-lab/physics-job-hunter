@@ -697,11 +697,31 @@ class LLMScorer:
     # ------------------------------------------------------------------
 
     def _call_nvidia(self, model: str, prompt: str) -> dict | None:
-        """Call NVIDIA with *model*."""
+        """Call NVIDIA with *model*.
+
+        Reasoning-mode headroom: both NVIDIA chain members
+        ([nvidia/nemotron-3-super-120b-a12b, openai/gpt-oss-120b])
+        emit a response that puts a meaningful fraction of the
+        completion budget into ``reasoning_content`` chain-of-thought,
+        so the default ``max_tokens=800`` returns ``content=""`` or a
+        truncated JSON fragment and ``_extract_json()`` silently fails
+        for the real scoring prompt.  Empirical verification on
+        2026-06-29 (real IGCSE-Physics probe prompt) confirmed
+        ``max_tokens=4096`` is enough for *both* NVIDIA models to finish
+        reasoning, hit ``finish_reason=stop``, and emit a parseable
+        JSON answer (``{"score":...}``).  Without this headroom the
+        NVIDIA chain cascades wastefully to ``openrouter`` /
+        ``gemini`` on every job.
+
+        Combined NVIDIA call cost at 4096 tokens for a typical scoring
+        prompt: ~750 total completion tokens (650 reasoning + 100
+        answer) per job.  That maps to <1 cent per job on the free
+        NVIDIA catalogue tier.
+        """
         return self._call_base(
             "https://integrate.api.nvidia.com/v1/chat/completions",
             settings.nvidia_api_key, model, prompt,
-            max_tokens=800, timeout=120,
+            max_tokens=4096, timeout=120,
         )
 
     def _score_via_nvidia(self, prompt: str) -> dict | None:

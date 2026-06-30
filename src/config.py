@@ -12,8 +12,8 @@ class Settings(BaseSettings):
     scorer_provider: Literal["opencode_zen", "gemini", "nvidia", "openrouter"] = "opencode_zen"
     scorer_fallback: Literal["opencode_zen", "gemini", "nvidia", "openrouter"] = "gemini"
     vision_extractor: Literal["opencode_zen", "gemini", "nvidia", "openrouter"] = "nvidia"
-    nvidia_model: str = "nvidia/nemotron-3-super-120b-a12b"
-    nvidia_backup_model: str = "openai/gpt-oss-120b"
+    nvidia_model: str = "openai/gpt-oss-120b"
+    nvidia_backup_model: str = "nvidia/nemotron-3-super-120b-a12b"
     openrouter_model: str = "google/gemma-4-31b-it:free"
     groq_model: str = "qwen/qwen3-32b"
 
