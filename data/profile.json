@@ -1,10 +1,11 @@
 {
   "target_subjects": ["Physics", "Science"],
   "target_curricula": ["IGCSE", "A-Level"],
-  "target_countries": ["UAE", "Qatar", "Saudi Arabia", "Singapore", "China", "Thailand", "Vietnam"],
+  "target_countries": ["UAE", "Qatar", "Saudi Arabia", "Singapore", "China", "Thailand"],
   "gender": "Male",
   "visa_sponsorship_required": true,
   "housing_allowance_preferred": true,
-  "leadership_opportunities": false,
-  "cv_summary": "Bilingual STEM Educator & Engineer with 4 years teaching IGCSE/A-Level Physics and Mathematics internationally. B.Sc. Engineering Science (University of Tripoli, 2021). Currently Physics Teacher at Vision International School (2023–present), delivering IGCSE Physics (since 2023) and A-Level Physics (since 2025). Previous experience at Kids Academy International School, Ladybird International School, and Knowledge Training Center. Technical background in mechanical/electrical diagnostics and industrial systems from Alsahl Group. Native Arabic speaker, fluent English. Based in Libya, seeking international school positions."
+  "leadership_opportunities": true,
+  "leadership_role_preference": ["Head of Physics", "Subject Lead", "STEM Coordinator", "STEM Lead"],
+  "cv_summary": "STEM Lead & Head of Physics candidate with three years' post-qualifying classroom experience delivering Pearson Edexcel IGCSE and A-Level Physics at Vision International School (Registered British Examination Centre), Tripoli. PGCEi candidate at Liverpool John Moores University (LJMU, UK) due 2026. B.Sc. Mechanical Engineering (University of Tripoli, 2020). Personally authored the school's full KS4/KS5 Edexcel Physics schemes of work, required practicals, and lab-safety procedures (CLEAPSS-aligned), and founded the engineering-linked STEM enrichment programme (industry visits, applied modelling). Concurrent appointment through 2024 at Kids Academy School (Cognia Accredited) for IGCSE/A-Level Physics intervention; prior KS3 Science and Chemistry at Ladybird International School (2022-2023). Engineering background (Alsahl Group, 2021-2022 - Technical Training & Diagnostics Specialist; Engineering Intern, Accuracy for Maintenance, 2020-2021) underpins uniquely credible delivery of Mechanics, Thermodynamics, Fluid Dynamics, and Electronics at GCSE and A-Level. Strong advocate of inclusive pedagogy, formative assessment (AfL), safeguarding, and current PGCEi continuing professional development."
 }
