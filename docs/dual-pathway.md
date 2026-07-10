@@ -146,19 +146,24 @@ New file. Mirrors `cover_letter.py` provider cascade and `__LLM` / `__fallback` 
 
 ```json
 {
-  "headline_for_parents": "Online IGCSE & A-Level Physics tutor based in Tripoli",
-  "blurb": "Hi — I'm Mahmoud. I teach IGCSE and A-Level Physics (and Maths) to international school students, with a focus on Pearson Edexcel and Cambridge. I'm currently completing my PGCEi (Postgraduate Certificate in Education, international track) through Liverpool John Moores University while teaching full-time at a bilingual school in Tripoli. My lessons are structured around your syllabus and exam board, with past-paper drill where it actually helps. The first 30 minutes are free — no charge, no obligation — so we can both see if I'm the right fit before you commit.",
+  "headline": "Online IGCSE & A-Level Physics tutor based in Tripoli",
+  "blurb": "Hi — I'm Mahmoud. I teach IGCSE and A-Level Physics to international school students, with a focus on Pearson Edexcel. I'm currently completing my PGCEi (international PGCE) through Liverpool John Moores University while teaching full-time at a registered British examination centre in Tripoli. My lessons are structured around your exam board, with model-led problem solving and required-practical drill where it actually moves grades. The first 30 minutes are always free — no charge, no obligation — so we can both see whether I'm a good fit before you commit.",
   "languages": ["English", "Arabic"],
-  "subjects": ["Physics", "Maths"],
+  "subjects": ["Physics"],
   "curricula": ["IGCSE", "A-Level"],
-  "exam_boards": ["Pearson Edexcel", "Cambridge CIE"],
+  "exam_boards": ["Pearson Edexcel"],
   "intro_session_minutes": 30,
   "intro_session_free": true,
-  "rate_band_usd_per_hour": "35-50",
+  "rate_band_usd_per_hour": "35-60",
   "response_sla_hours": 24,
   "preferred_contact": "WhatsApp / Telegram"
 }
 ```
+
+Note: school-job profile (`data/profile.json`, pure-Physics positioning
+with leadership preference) is **separate** from this tutoring profile.
+See AGENTS.md §5 for the scorer wiring; AGENTS.md also notes the
+discrepancy was resolved 2026-06-30.
 
 Editable without code changes; generator reads at startup.
 

@@ -250,7 +250,7 @@ class LLMScorer:
 
         # OpenCode Zen
         if settings.opencode_zen_api_key:
-            self._providers.append(("opencode_zen", self._score_via_opencode_zen, None))
+            self._providers.append(("opencode_zen", self._score_via_opencode_zen, self._batch_score_via_opencode_zen))
 
         # Gemini
         if settings.gemini_api_key:
@@ -892,6 +892,59 @@ class LLMScorer:
 
     def _score_via_opencode_zen(self, prompt: str) -> dict | None:
         return self._try_models("opencode_zen", prompt, self.OPENCODE_MODELS, self._call_opencode_zen)
+
+    def _batch_score_via_opencode_zen(self, prompt: str, expected: int) -> list[dict] | None:
+        """Batch scoring via OpenCode Zen (single call, multi-job response).
+
+        Uses the first model in OPENCODE_MODELS (deepseek-v4-flash-free).
+        Reasoning-mode headroom: max_tokens=4096 so the model can finish
+        its reasoning_content chain-of-thought and emit the visible JSON
+        array answer (same fix as the single-score path, 2026-06-28).
+        temperature=0.3 matches the single-score path (not 0.1 like Groq)
+        because reasoning-mode models benefit from a slightly warmer
+        setting to avoid the chain-of-thought collapsing onto itself.
+        """
+        try:
+            resp = httpx.post(
+                "https://opencode.ai/zen/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {settings.opencode_zen_api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": self.OPENCODE_MODELS[0],
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.3,
+                    "max_tokens": 4096,
+                },
+                timeout=120,
+            )
+            if resp.status_code in (401, 404):
+                log.warning("[CONFIG_INVALID] OpenCode Zen batch rejected (HTTP %s)", resp.status_code)
+                return None
+            resp.raise_for_status()
+            content = resp.json()["choices"][0]["message"]["content"]
+            json_str = self._extract_json_array(content)
+            if json_str is None:
+                json_str = self._extract_json(content)
+                if json_str:
+                    return [json.loads(json_str)]
+                log.warning("OpenCode Zen batch: could not extract JSON array from %r", content[:200])
+                return None
+            scores = json.loads(json_str)
+            if isinstance(scores, dict):
+                scores = [scores]
+            if len(scores) != expected:
+                log.warning("OpenCode Zen batch: expected %d scores, got %d", expected, len(scores))
+            return scores[:expected]
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code in (429, 500, 502, 503):
+                raise  # retryable — tenacity handles
+            log.warning("OpenCode Zen batch failed: %s", e)
+            return None
+        except Exception as e:
+            log.debug("OpenCode Zen batch failed: %s", e)
+            return None
 
     # ------------------------------------------------------------------
     #  Rule-based ultimate fallback
