@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Production
+build/
+
+# Local env files (never commit secrets)
+.env
+.env.local
+.env.*.local
+
+# Advisory settings store (local overrides)
+config.json
+
+# Misc
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.DS_Store
+*.pem
+.vercel
+next-env.d.ts

@@ -292,11 +292,11 @@ class LLMClient:
             return None
 
     def _call_opencode_zen(self, prompt: str, max_tokens: int, temperature: float) -> str | None:
-        # Single-model chain (deepseek-v4-flash-free). The previous
-        # ``deepseek-v4-pro`` and ``deepseek-v4-flash`` (paid) fallbacks
-        # were dropped on 2026-06-28 — both return 401 CreditsError for
-        # the workspace ``wrk_01KRNSES9FY5ACEMK78BKAC1QY`` (no payment
-        # method).
+        # Primary: hy3-free (OpenCode Zen). deepseek-v4-flash-free is the
+        # fallback if hy3-free is unavailable / errors (2026-07-12). The
+        # paid ``deepseek-v4-pro`` / ``deepseek-v4-flash`` fallbacks were
+        # dropped on 2026-06-28 — both return 401 CreditsError for the
+        # workspace ``wrk_01KRNSES9FY5ACEMK78BKAC1QY`` (no payment method).
         #
         # Reasoning-mode headroom:  deepseek-v4-flash-free burns most of
         # its output budget on ``reasoning_content`` chain-of-thought,
@@ -305,7 +305,7 @@ class LLMClient:
         # the model to finish reasoning and emit the visible answer
         # (e.g. ``content: '80'`` for the IGCSE-Physics scoring prompt).
         # Endpoint: https://opencode.ai/zen/v1/chat/completions
-        for model in ("deepseek-v4-flash-free",):
+        for model in ("hy3-free", "deepseek-v4-flash-free"):
             from src.config import settings as _s
             try:
                 # Use at least 4096 tokens to leave reasoning headroom,

@@ -1,0 +1,5556 @@
+{
+  "version": "1.0.0",
+  "gitCommitHash": "development",
+  "generatedAt": "2026-06-28T23:32:02.911Z",
+  "files": {
+    "AGENTS.md": {
+      "filePath": "AGENTS.md",
+      "contentHash": "f0610b855ba5fd6f089941cea03b9001cccfd65438f2c7510159b938db788116",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 249,
+      "hasStructuralAnalysis": true
+    },
+    "data/INTERVIEW_Q_and_A.md": {
+      "filePath": "data/INTERVIEW_Q_and_A.md",
+      "contentHash": "e667121dbd2060e3af5ff8fcb8727284afc00bda0dbb84e8490e43c7a1f80f26",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 87,
+      "hasStructuralAnalysis": true
+    },
+    "data/profile_tutoring.json": {
+      "filePath": "data/profile_tutoring.json",
+      "contentHash": "181cb443f78d95e0d6960f463f665fe7ac9c77ea13e1d007225d39403f52bffb",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 24,
+      "hasStructuralAnalysis": true
+    },
+    "data/profile.json": {
+      "filePath": "data/profile.json",
+      "contentHash": "0aa28bb2bf18c98f1b2f876a4f5920648c32e5280ba1759c44206e050e5324f7",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 11,
+      "hasStructuralAnalysis": true
+    },
+    "docs/dual-pathway.md": {
+      "filePath": "docs/dual-pathway.md",
+      "contentHash": "6d3e96a84fb257d70040e8dbdd94c25ab1dea8a986aa8681f0a1ee4b0d4c3ef9",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 266,
+      "hasStructuralAnalysis": true
+    },
+    "grilling.md": {
+      "filePath": "grilling.md",
+      "contentHash": "6189dfceb7304a6e5558f75d87e68fa3bc7fcf7ba120e44f21f8a61fe01eba54",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": true
+    },
+    "nul": {
+      "filePath": "nul",
+      "contentHash": "7ca30121ad83149099a044b0e4a19e921539b86b5f7f3148b017713049a30b37",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 38,
+      "hasStructuralAnalysis": false
+    },
+    "package.json": {
+      "filePath": "package.json",
+      "contentHash": "1934a336e00c9bb719041e64a86158a1d4de549b76489b153210fff78464c53c",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 6,
+      "hasStructuralAnalysis": true
+    },
+    "pyproject.toml": {
+      "filePath": "pyproject.toml",
+      "contentHash": "47ade9899d1b88d8a926a1eebbd7ef3747ee1910b28735d883832074ec2e23ec",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 22,
+      "hasStructuralAnalysis": true
+    },
+    "readme.md": {
+      "filePath": "readme.md",
+      "contentHash": "f5cd30f370d466ddd0af76fdd56b069f6ac0d08a21f85e649fcccb7925e86c4d",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 38,
+      "hasStructuralAnalysis": true
+    },
+    "requirements.txt": {
+      "filePath": "requirements.txt",
+      "contentHash": "905ea4c654657bfbc72bbac6ad3887b1551d41402462c5c86f827180aa312b61",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 35,
+      "hasStructuralAnalysis": false
+    },
+    "scripts/__init__.py": {
+      "filePath": "scripts/__init__.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/migrate_tutoring_leads.py": {
+      "filePath": "scripts/migrate_tutoring_leads.py",
+      "contentHash": "74ebb4f96f5702dbafc15f71a21eba1c8db8b08f391bc05d834382cc2627b60e",
+      "functions": [
+        {
+          "name": "require_env",
+          "params": [
+            "name"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "run_migration",
+          "params": [
+            "dsn"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "main",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "psycopg2",
+          "specifiers": [
+            "psycopg2"
+          ]
+        },
+        {
+          "source": "psycopg2",
+          "specifiers": [
+            "psql"
+          ]
+        }
+      ],
+      "exports": [
+        "require_env",
+        "run_migration",
+        "main"
+      ],
+      "totalLines": 145,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/run_scheduler.py": {
+      "filePath": "scripts/run_scheduler.py",
+      "contentHash": "20f8432c28505114e45d67ebb06dc96a638c1ac02817cceef4c3bdb8731368f4",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "src.scheduler.daily_run",
+          "specifiers": [
+            "start"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 5,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/run_scheduler.sh": {
+      "filePath": "scripts/run_scheduler.sh",
+      "contentHash": "b2c6a8947d5469c7c1d493c597eee7ddf47fb725d5f447beffa3ec72d34e0181",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 4,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/run_telegram_bot.py": {
+      "filePath": "scripts/run_telegram_bot.py",
+      "contentHash": "e12651fa8a69eb9fa7063ce561ff2ea7e796afc4ec821e2224198842757dcfba",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "src.notify.telegram_inbound",
+          "specifiers": [
+            "_entry"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 15,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/run_telegram_bot.sh": {
+      "filePath": "scripts/run_telegram_bot.sh",
+      "contentHash": "3532ca518cb62e378b38fc322b9dfeda714383c5e9d1091574631522c6a1d2ba",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 4,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/setup_supabase.sql": {
+      "filePath": "scripts/setup_supabase.sql",
+      "contentHash": "09b3c5ad340a79468753db17cbc06e017bb08f0819e915b88296dc51b2a01bec",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 26,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/setup_tutoring_leads_core.sql": {
+      "filePath": "scripts/setup_tutoring_leads_core.sql",
+      "contentHash": "0d820975a5b08ac3bb739235484dcfbe9593bbd8224de2b2d5b525a00f7e39ca",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 85,
+      "hasStructuralAnalysis": true
+    },
+    "scripts/setup_tutoring_leads.sql": {
+      "filePath": "scripts/setup_tutoring_leads.sql",
+      "contentHash": "e57a8ac3ca5eac575901940259e25872f5bd38cc4b4235886296baf612e37648",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 104,
+      "hasStructuralAnalysis": true
+    },
+    "src/__init__.py": {
+      "filePath": "src/__init__.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "src/agents/__init__.py": {
+      "filePath": "src/agents/__init__.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "src/agents/models.py": {
+      "filePath": "src/agents/models.py",
+      "contentHash": "6e10842efa595ef539b8da38dd58c79ee9743dd2b7da6c1298d65708a84ef7e9",
+      "functions": [],
+      "classes": [
+        {
+          "name": "TutoringBrief",
+          "methods": [
+            "_pain_points_non_empty",
+            "fallback"
+          ],
+          "properties": [
+            "student_pain_points",
+            "parent_signals",
+            "subject_alignment",
+            "recommended_first_session_focus",
+            "voice_warmth_target",
+            "red_flags"
+          ],
+          "exported": true,
+          "lineCount": 75
+        },
+        {
+          "name": "StrategicBrief",
+          "methods": [
+            "_facts_must_be_non_empty",
+            "fallback"
+          ],
+          "properties": [
+            "institution_facts",
+            "strategic_alignment",
+            "recommended_angle"
+          ],
+          "exported": true,
+          "lineCount": 56
+        }
+      ],
+      "imports": [
+        {
+          "source": "pydantic",
+          "specifiers": [
+            "BaseModel",
+            "Field",
+            "field_validator"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Literal"
+          ]
+        }
+      ],
+      "exports": [
+        "TutoringBrief",
+        "StrategicBrief"
+      ],
+      "totalLines": 138,
+      "hasStructuralAnalysis": true
+    },
+    "src/agents/research_agent.py": {
+      "filePath": "src/agents/research_agent.py",
+      "contentHash": "dabcfcc1d30913fcd2e644b6a54702c7d4ba79ee642eaf5e07a40148cf9d44d6",
+      "functions": [],
+      "classes": [
+        {
+          "name": "AgentAction",
+          "methods": [],
+          "properties": [
+            "action",
+            "reasoning",
+            "arguments",
+            "brief"
+          ],
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "ResearchContext",
+          "methods": [
+            "add_observation",
+            "observations_text",
+            "to_prompt"
+          ],
+          "properties": [
+            "school_name",
+            "location",
+            "job_description",
+            "profile",
+            "observations"
+          ],
+          "exported": true,
+          "lineCount": 23
+        },
+        {
+          "name": "LLMClient",
+          "methods": [
+            "__init__",
+            "complete",
+            "_providers",
+            "_openai_post",
+            "_call_groq",
+            "_call_nvidia",
+            "_call_openrouter",
+            "_call_gemini",
+            "_call_opencode_zen"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 166
+        },
+        {
+          "name": "ResearchAgent",
+          "methods": [
+            "__init__",
+            "research",
+            "_parse_action",
+            "_synthesise",
+            "_extract_json",
+            "_load_profile"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 168
+        }
+      ],
+      "imports": [
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "random",
+          "specifiers": [
+            "random"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass",
+            "field"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any",
+            "Callable",
+            "Literal"
+          ]
+        },
+        {
+          "source": "httpx",
+          "specifiers": [
+            "httpx"
+          ]
+        },
+        {
+          "source": "pydantic",
+          "specifiers": [
+            "BaseModel",
+            "Field",
+            "ValidationError"
+          ]
+        },
+        {
+          "source": "src.config",
+          "specifiers": [
+            "settings"
+          ]
+        },
+        {
+          "source": "src.agents.models",
+          "specifiers": [
+            "StrategicBrief"
+          ]
+        },
+        {
+          "source": "src.agents.tools",
+          "specifiers": [
+            "web_search",
+            "deep_scrape"
+          ]
+        }
+      ],
+      "exports": [
+        "AgentAction",
+        "ResearchContext",
+        "LLMClient",
+        "ResearchAgent"
+      ],
+      "totalLines": 489,
+      "hasStructuralAnalysis": true
+    },
+    "src/agents/tools.py": {
+      "filePath": "src/agents/tools.py",
+      "contentHash": "0e46e86798ce484bae12958eb0ed3f7b60ebda46ef6b11a722a47d52e6434fae",
+      "functions": [
+        {
+          "name": "_rate_limited",
+          "params": [],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "web_search",
+          "params": [
+            "query",
+            "max_results"
+          ],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 70
+        },
+        {
+          "name": "deep_scrape",
+          "params": [
+            "url",
+            "max_length"
+          ],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 26
+        },
+        {
+          "name": "_firecrawl_scrape",
+          "params": [
+            "url",
+            "max_length"
+          ],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 25
+        },
+        {
+          "name": "_http_fallback_scrape",
+          "params": [
+            "url",
+            "max_length"
+          ],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 25
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "httpx",
+          "specifiers": [
+            "httpx"
+          ]
+        },
+        {
+          "source": "bs4",
+          "specifiers": [
+            "BeautifulSoup"
+          ]
+        },
+        {
+          "source": "src.config",
+          "specifiers": [
+            "settings"
+          ]
+        }
+      ],
+      "exports": [
+        "_rate_limited",
+        "web_search",
+        "deep_scrape",
+        "_firecrawl_scrape",
+        "_http_fallback_scrape"
+      ],
+      "totalLines": 181,
+      "hasStructuralAnalysis": true
+    },
+    "src/agents/tutoring_parser.py": {
+      "filePath": "src/agents/tutoring_parser.py",
+      "contentHash": "be5f4d3a39dcbb6e167e5c8670daf0c9a32f47d53b7908cf032a5db26e26faf6",
+      "functions": [
+        {
+          "name": "_strip_wrappers",
+          "params": [
+            "text"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "_balanced_extract",
+          "params": [
+            "text",
+            "start",
+            "open_ch",
+            "close_ch"
+          ],
+          "returnType": "str | None",
+          "exported": true,
+          "lineCount": 25
+        },
+        {
+          "name": "_fix_json_quirks",
+          "params": [
+            "text"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "_extract_json_object",
+          "params": [
+            "text"
+          ],
+          "returnType": "str | None",
+          "exported": true,
+          "lineCount": 11
+        },
+        {
+          "name": "_call_groq",
+          "params": [
+            "prompt",
+            "model"
+          ],
+          "returnType": "str | None",
+          "exported": true,
+          "lineCount": 20
+        },
+        {
+          "name": "_call_nvidia",
+          "params": [
+            "prompt",
+            "model"
+          ],
+          "returnType": "str | None",
+          "exported": true,
+          "lineCount": 20
+        },
+        {
+          "name": "_call_openrouter",
+          "params": [
+            "prompt",
+            "model"
+          ],
+          "returnType": "str | None",
+          "exported": true,
+          "lineCount": 20
+        },
+        {
+          "name": "_call_gemini",
+          "params": [
+            "prompt",
+            "model"
+          ],
+          "returnType": "str | None",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "_provider_call",
+          "params": [
+            "prompt"
+          ],
+          "returnType": "str | None",
+          "exported": true,
+          "lineCount": 30
+        },
+        {
+          "name": "parse_tutoring_lead",
+          "params": [
+            "raw_message"
+          ],
+          "returnType": "TutoringBrief",
+          "exported": true,
+          "lineCount": 39
+        },
+        {
+          "name": "parse_to_dict",
+          "params": [
+            "raw_message"
+          ],
+          "returnType": "tuple[TutoringBrief, dict[str, Any]]",
+          "exported": true,
+          "lineCount": 12
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any",
+            "Callable"
+          ]
+        },
+        {
+          "source": "httpx",
+          "specifiers": [
+            "httpx"
+          ]
+        },
+        {
+          "source": "src.agents.models",
+          "specifiers": [
+            "TutoringBrief"
+          ]
+        },
+        {
+          "source": "src.config",
+          "specifiers": [
+            "settings"
+          ]
+        }
+      ],
+      "exports": [
+        "_strip_wrappers",
+        "_balanced_extract",
+        "_fix_json_quirks",
+        "_extract_json_object",
+        "_call_groq",
+        "_call_nvidia",
+        "_call_openrouter",
+        "_call_gemini",
+        "_provider_call",
+        "parse_tutoring_lead",
+        "parse_to_dict"
+      ],
+      "totalLines": 325,
+      "hasStructuralAnalysis": true
+    },
+    "src/config.py": {
+      "filePath": "src/config.py",
+      "contentHash": "43733514454acda809e52e409f5104573568288d745d97ffea3743dc754988c1",
+      "functions": [],
+      "classes": [
+        {
+          "name": "Settings",
+          "methods": [],
+          "properties": [
+            "opencode_zen_api_key",
+            "gemini_api_key",
+            "nvidia_api_key",
+            "openrouter_api_key",
+            "groq_api_key",
+            "scorer_provider",
+            "scorer_fallback",
+            "vision_extractor",
+            "nvidia_model",
+            "nvidia_backup_model",
+            "openrouter_model",
+            "groq_model",
+            "supabase_url",
+            "supabase_service_role_key",
+            "telegram_bot_token",
+            "telegram_chat_id",
+            "email_provider",
+            "resend_api_key",
+            "email_from",
+            "email_to",
+            "smtp_host",
+            "smtp_port",
+            "smtp_user",
+            "smtp_password",
+            "firecrawl_api_key",
+            "sa_username",
+            "sa_password",
+            "th_email",
+            "th_password",
+            "notify_score_threshold",
+            "research_score_threshold",
+            "schedule_time",
+            "tutoring_min_rate_usd",
+            "tutoring_proposal_score_threshold",
+            "tutoring_parse_interval_min",
+            "tutoring_parse_timeout_s",
+            "tutoring_in_scope_curricula",
+            "tutoring_out_of_scope_hold",
+            "tutoring_rate_band_default_usd"
+          ],
+          "exported": true,
+          "lineCount": 61
+        }
+      ],
+      "imports": [
+        {
+          "source": "pydantic_settings",
+          "specifiers": [
+            "BaseSettings",
+            "SettingsConfigDict"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Literal"
+          ]
+        }
+      ],
+      "exports": [
+        "Settings"
+      ],
+      "totalLines": 69,
+      "hasStructuralAnalysis": true
+    },
+    "src/extractors/__init__.py": {
+      "filePath": "src/extractors/__init__.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "src/generators/__init__.py": {
+      "filePath": "src/generators/__init__.py",
+      "contentHash": "a7fc6151d3dcb136f3010e4e5fafea5ad8e82228c3c2ad9651785fa782d02e49",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "src.generators.cover_letter",
+          "specifiers": [
+            "CoverLetterGenerator"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 4,
+      "hasStructuralAnalysis": true
+    },
+    "src/generators/tutoring_proposal.py": {
+      "filePath": "src/generators/tutoring_proposal.py",
+      "contentHash": "e72d047a7900821b6a8fd2788182d2361fa8201bc0cac0696e65ba7375884552",
+      "functions": [
+        {
+          "name": "_load_profile",
+          "params": [],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 20
+        },
+        {
+          "name": "_voice_register",
+          "params": [
+            "level"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "_render_template",
+          "params": [
+            "brief",
+            "score",
+            "profile"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 41
+        },
+        {
+          "name": "_save",
+          "params": [
+            "text",
+            "lead_id",
+            "mode"
+          ],
+          "returnType": "Path",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "_strip_wrappers",
+          "params": [
+            "text"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "generate_proposal",
+          "params": [
+            "lead_row",
+            "brief",
+            "score",
+            "use_llm",
+            "llm_call"
+          ],
+          "returnType": "ProposalResult",
+          "exported": true,
+          "lineCount": 71
+        }
+      ],
+      "classes": [
+        {
+          "name": "ProposalResult",
+          "methods": [],
+          "properties": [
+            "text",
+            "mode",
+            "path"
+          ],
+          "exported": true,
+          "lineCount": 4
+        }
+      ],
+      "imports": [
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "src.agents.models",
+          "specifiers": [
+            "TutoringBrief"
+          ]
+        },
+        {
+          "source": "src.scoring.tutoring_scorer",
+          "specifiers": [
+            "TutoringScore"
+          ]
+        }
+      ],
+      "exports": [
+        "_load_profile",
+        "_voice_register",
+        "_render_template",
+        "ProposalResult",
+        "_save",
+        "_strip_wrappers",
+        "generate_proposal"
+      ],
+      "totalLines": 287,
+      "hasStructuralAnalysis": true
+    },
+    "src/main.py": {
+      "filePath": "src/main.py",
+      "contentHash": "845192c1997d3e644e899dd0f8c2d69bd2b0f54bad89a23fecd4183d95a6e1d2",
+      "functions": [
+        {
+          "name": "_is_relevant",
+          "params": [
+            "job"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 30
+        },
+        {
+          "name": "filter_relevant_jobs",
+          "params": [
+            "jobs"
+          ],
+          "returnType": "list[dict]",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "run_scrapers",
+          "params": [],
+          "returnType": "list[dict]",
+          "exported": true,
+          "lineCount": 16
+        },
+        {
+          "name": "score_jobs_in_memory",
+          "params": [
+            "jobs",
+            "scorer"
+          ],
+          "returnType": "list[dict]",
+          "exported": true,
+          "lineCount": 21
+        },
+        {
+          "name": "_job_key",
+          "params": [
+            "job"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "score_jobs_from_db",
+          "params": [
+            "db",
+            "scorer"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "send_notifications",
+          "params": [
+            "jobs",
+            "db"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 44
+        },
+        {
+          "name": "run_pipeline",
+          "params": [
+            "force_notify"
+          ],
+          "returnType": "dict",
+          "exported": true,
+          "lineCount": 58
+        },
+        {
+          "name": "main",
+          "params": [],
+          "exported": true,
+          "lineCount": 8
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "argparse",
+          "specifiers": [
+            "argparse"
+          ]
+        },
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime"
+          ]
+        },
+        {
+          "source": "httpx",
+          "specifiers": [
+            "httpx"
+          ]
+        },
+        {
+          "source": "src.config",
+          "specifiers": [
+            "settings"
+          ]
+        },
+        {
+          "source": "src.scrapers.tes",
+          "specifiers": [
+            "TESScraper"
+          ]
+        },
+        {
+          "source": "src.scrapers.linkedin",
+          "specifiers": [
+            "LinkedInScraper"
+          ]
+        },
+        {
+          "source": "src.scrapers.basis",
+          "specifiers": [
+            "BasisScraper"
+          ]
+        },
+        {
+          "source": "src.scrapers.dipont",
+          "specifiers": [
+            "DipontScraper"
+          ]
+        },
+        {
+          "source": "src.scrapers.toptutorjob",
+          "specifiers": [
+            "TopTutorJobScraper"
+          ]
+        },
+        {
+          "source": "src.scrapers.teacher_horizons",
+          "specifiers": [
+            "TeacherHorizonsScraper"
+          ]
+        },
+        {
+          "source": "src.scrapers.search_associates",
+          "specifiers": [
+            "SearchAssociatesScraper"
+          ]
+        },
+        {
+          "source": "src.scrapers.gulftalent",
+          "specifiers": [
+            "GulfTalentScraper"
+          ]
+        },
+        {
+          "source": "src.scrapers.schrole",
+          "specifiers": [
+            "SchroleScraper"
+          ]
+        },
+        {
+          "source": "src.scrapers.libyan_jobs",
+          "specifiers": [
+            "LibyanJobsScraper"
+          ]
+        },
+        {
+          "source": "src.storage.supabase_client",
+          "specifiers": [
+            "SupabaseClient"
+          ]
+        },
+        {
+          "source": "src.scoring.llm_scorer",
+          "specifiers": [
+            "LLMScorer"
+          ]
+        },
+        {
+          "source": "src.generators.cover_letter",
+          "specifiers": [
+            "CoverLetterGenerator"
+          ]
+        },
+        {
+          "source": "src.agents.research_agent",
+          "specifiers": [
+            "ResearchAgent"
+          ]
+        },
+        {
+          "source": "src.agents.models",
+          "specifiers": [
+            "StrategicBrief"
+          ]
+        },
+        {
+          "source": "src.notify.telegram",
+          "specifiers": [
+            "send_telegram_alert"
+          ]
+        },
+        {
+          "source": "src.notify.email_sender",
+          "specifiers": [
+            "send_email_digest"
+          ]
+        }
+      ],
+      "exports": [
+        "_is_relevant",
+        "filter_relevant_jobs",
+        "run_scrapers",
+        "score_jobs_in_memory",
+        "_job_key",
+        "score_jobs_from_db",
+        "send_notifications",
+        "run_pipeline",
+        "main"
+      ],
+      "totalLines": 294,
+      "hasStructuralAnalysis": true
+    },
+    "src/notify/__init__.py": {
+      "filePath": "src/notify/__init__.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "src/notify/email_sender.py": {
+      "filePath": "src/notify/email_sender.py",
+      "contentHash": "2348dd13cdb0f615d9bc84a28c566f77e9c1ec660a940e34cc92b8fa5c25e195",
+      "functions": [
+        {
+          "name": "_build_digest_html",
+          "params": [
+            "jobs"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "send_email_digest",
+          "params": [
+            "jobs"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "_send_via_resend",
+          "params": [
+            "subject",
+            "html"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "_send_via_smtp",
+          "params": [
+            "subject",
+            "html"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 17
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "datetime",
+          "specifiers": [
+            "date"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "smtplib",
+          "specifiers": [
+            "smtplib"
+          ]
+        },
+        {
+          "source": "email.mime.text",
+          "specifiers": [
+            "MIMEText"
+          ]
+        },
+        {
+          "source": "httpx",
+          "specifiers": [
+            "httpx"
+          ]
+        },
+        {
+          "source": "src.config",
+          "specifiers": [
+            "settings"
+          ]
+        }
+      ],
+      "exports": [
+        "_build_digest_html",
+        "send_email_digest",
+        "_send_via_resend",
+        "_send_via_smtp"
+      ],
+      "totalLines": 102,
+      "hasStructuralAnalysis": true
+    },
+    "src/notify/telegram_inbound.py": {
+      "filePath": "src/notify/telegram_inbound.py",
+      "contentHash": "6718792ba46b3c26020c26078148fe3549f83e515896827a2f61b683864e8a08",
+      "functions": [
+        {
+          "name": "refresh_last_proposals",
+          "params": [
+            "storage"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 17
+        },
+        {
+          "name": "_send",
+          "params": [
+            "chat_id",
+            "text"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 21
+        },
+        {
+          "name": "_extract_uuid",
+          "params": [
+            "text"
+          ],
+          "returnType": "str | None",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "_read_recent",
+          "params": [
+            "chat_id"
+          ],
+          "returnType": "httpx.Response | None",
+          "exported": true,
+          "lineCount": 21
+        },
+        {
+          "name": "_handle_command",
+          "params": [
+            "cmd_text",
+            "chat_id",
+            "storage"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 48
+        },
+        {
+          "name": "_handle_intake",
+          "params": [
+            "raw_text",
+            "chat_id",
+            "storage"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 29
+        },
+        {
+          "name": "_process_update",
+          "params": [
+            "update",
+            "storage",
+            "authorised_chat_ids"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 28
+        },
+        {
+          "name": "_authorised_chat_ids",
+          "params": [],
+          "returnType": "set[int]",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "run",
+          "params": [
+            "poll_interval"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 73
+        },
+        {
+          "name": "_entry",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 12
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "argparse",
+          "specifiers": [
+            "argparse"
+          ]
+        },
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "httpx",
+          "specifiers": [
+            "httpx"
+          ]
+        },
+        {
+          "source": "src.config",
+          "specifiers": [
+            "settings"
+          ]
+        },
+        {
+          "source": "src.storage.tutoring_leads",
+          "specifiers": [
+            "TutoringLeadStorage"
+          ]
+        }
+      ],
+      "exports": [
+        "refresh_last_proposals",
+        "_send",
+        "_extract_uuid",
+        "_read_recent",
+        "_handle_command",
+        "_handle_intake",
+        "_process_update",
+        "_authorised_chat_ids",
+        "run",
+        "_entry"
+      ],
+      "totalLines": 400,
+      "hasStructuralAnalysis": true
+    },
+    "src/notify/telegram.py": {
+      "filePath": "src/notify/telegram.py",
+      "contentHash": "6764043ea0fc80dd65894dfa97c20378efea34dfa834ce2081d5d37d83a17141",
+      "functions": [
+        {
+          "name": "_esc",
+          "params": [
+            "text"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "_send_message",
+          "params": [
+            "chat_id",
+            "text"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 18
+        },
+        {
+          "name": "_send_document",
+          "params": [
+            "chat_id",
+            "file_path",
+            "caption"
+          ],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 23
+        },
+        {
+          "name": "send_telegram_alert",
+          "params": [
+            "jobs",
+            "cover_letter_paths"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 65
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "httpx",
+          "specifiers": [
+            "httpx"
+          ]
+        },
+        {
+          "source": "src.config",
+          "specifiers": [
+            "settings"
+          ]
+        }
+      ],
+      "exports": [
+        "_esc",
+        "_send_message",
+        "_send_document",
+        "send_telegram_alert"
+      ],
+      "totalLines": 163,
+      "hasStructuralAnalysis": true
+    },
+    "src/scheduler/__init__.py": {
+      "filePath": "src/scheduler/__init__.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "src/scheduler/daily_run.py": {
+      "filePath": "src/scheduler/daily_run.py",
+      "contentHash": "6d3561e68a3d6de8e771902e858eaac2f691eaa779c1d52fc9cff565a93fb958",
+      "functions": [
+        {
+          "name": "_wrapped_run",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "_wrapped_tutoring_tick",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "start",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 30
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "traceback",
+          "specifiers": [
+            "traceback"
+          ]
+        },
+        {
+          "source": "apscheduler.schedulers.blocking",
+          "specifiers": [
+            "BlockingScheduler"
+          ]
+        },
+        {
+          "source": "apscheduler.triggers.cron",
+          "specifiers": [
+            "CronTrigger"
+          ]
+        },
+        {
+          "source": "apscheduler.triggers.interval",
+          "specifiers": [
+            "IntervalTrigger"
+          ]
+        },
+        {
+          "source": "src.config",
+          "specifiers": [
+            "settings"
+          ]
+        },
+        {
+          "source": "src.main",
+          "specifiers": [
+            "run_pipeline"
+          ]
+        },
+        {
+          "source": "src.scheduler.tutoring_run",
+          "specifiers": [
+            "tutoring_run_once"
+          ]
+        }
+      ],
+      "exports": [
+        "_wrapped_run",
+        "_wrapped_tutoring_tick",
+        "start"
+      ],
+      "totalLines": 62,
+      "hasStructuralAnalysis": true
+    },
+    "src/scheduler/tutoring_run.py": {
+      "filePath": "src/scheduler/tutoring_run.py",
+      "contentHash": "5664846186aab8c21e6540cff1bd023cd95f28680385612601d310d3c669100b",
+      "functions": [
+        {
+          "name": "_emit_telegram_notify",
+          "params": [
+            "lead_id",
+            "raw_message",
+            "score_breakdown",
+            "match_score",
+            "proposal_text"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 26
+        },
+        {
+          "name": "run_once",
+          "params": [],
+          "returnType": "dict[str, int]",
+          "exported": true,
+          "lineCount": 85
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "traceback",
+          "specifiers": [
+            "traceback"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "src.agents.tutoring_parser",
+          "specifiers": [
+            "parse_to_dict"
+          ]
+        },
+        {
+          "source": "src.config",
+          "specifiers": [
+            "settings"
+          ]
+        },
+        {
+          "source": "src.generators.tutoring_proposal",
+          "specifiers": [
+            "generate_proposal"
+          ]
+        },
+        {
+          "source": "src.scoring.tutoring_scorer",
+          "specifiers": [
+            "score_tutoring_lead"
+          ]
+        },
+        {
+          "source": "src.storage.tutoring_leads",
+          "specifiers": [
+            "TutoringLeadStorage"
+          ]
+        }
+      ],
+      "exports": [
+        "_emit_telegram_notify",
+        "run_once"
+      ],
+      "totalLines": 159,
+      "hasStructuralAnalysis": true
+    },
+    "src/scoring/__init__.py": {
+      "filePath": "src/scoring/__init__.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "src/scoring/llm_scorer.py": {
+      "filePath": "src/scoring/llm_scorer.py",
+      "contentHash": "8e703fb039d5a891086b1a02ab344c3c8f15cd9d7b783967edecd191d4eedfb5",
+      "functions": [
+        {
+          "name": "compress_job",
+          "params": [
+            "job"
+          ],
+          "returnType": "dict[str, Any]",
+          "exported": true,
+          "lineCount": 14
+        }
+      ],
+      "classes": [
+        {
+          "name": "ProviderConfig",
+          "methods": [],
+          "properties": [
+            "name",
+            "rpm",
+            "single_fn",
+            "batch_fn",
+            "key_configured",
+            "weight"
+          ],
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "ProviderRegistry",
+          "methods": [
+            "__init__",
+            "active_providers",
+            "record_failure",
+            "record_success",
+            "_canary",
+            "_restore",
+            "state_summary"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 92
+        },
+        {
+          "name": "LLMScorer",
+          "methods": [
+            "__init__",
+            "_probe_once",
+            "validate_provider_configs",
+            "_load_profile",
+            "_apply_modifiers",
+            "_try_models",
+            "score",
+            "batch_score",
+            "_try_batch",
+            "_call_base",
+            "_call_groq",
+            "_score_via_groq",
+            "_batch_score_via_groq",
+            "_call_nvidia",
+            "_score_via_nvidia",
+            "_call_openrouter",
+            "_score_via_openrouter",
+            "_batch_score_via_openrouter",
+            "_call_gemini",
+            "_score_via_gemini",
+            "_batch_score_via_gemini",
+            "_call_opencode_zen",
+            "_score_via_opencode_zen",
+            "_score_via_rules",
+            "_balanced_extract",
+            "_strip_llm_wrappers",
+            "_extract_json",
+            "_extract_json_array"
+          ],
+          "properties": [
+            "GROQ_MODELS",
+            "NVIDIA_MODELS",
+            "OPENCODE_MODELS"
+          ],
+          "exported": true,
+          "lineCount": 769
+        }
+      ],
+      "imports": [
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "time",
+          "specifiers": [
+            "time"
+          ]
+        },
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass",
+            "field"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime",
+            "date"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any",
+            "Callable"
+          ]
+        },
+        {
+          "source": "httpx",
+          "specifiers": [
+            "httpx"
+          ]
+        },
+        {
+          "source": "tenacity",
+          "specifiers": [
+            "Retrying",
+            "wait_random_exponential",
+            "stop_after_attempt"
+          ]
+        },
+        {
+          "source": "src.config",
+          "specifiers": [
+            "settings"
+          ]
+        }
+      ],
+      "exports": [
+        "ProviderConfig",
+        "ProviderRegistry",
+        "compress_job",
+        "LLMScorer"
+      ],
+      "totalLines": 988,
+      "hasStructuralAnalysis": true
+    },
+    "src/scoring/tutoring_scorer.py": {
+      "filePath": "src/scoring/tutoring_scorer.py",
+      "contentHash": "0aedb748ff4f0412fd1850399c5fa2d0820bf65ac9c3f62e9c752a597d7746c8",
+      "functions": [
+        {
+          "name": "_classify_curriculum",
+          "params": [
+            "text"
+          ],
+          "returnType": "Curriculum",
+          "exported": true,
+          "lineCount": 6
+        },
+        {
+          "name": "_classify_subject",
+          "params": [
+            "text"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 17
+        },
+        {
+          "name": "_classify_urgency",
+          "params": [
+            "text"
+          ],
+          "returnType": "str",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "_weeks_to_exam",
+          "params": [
+            "text"
+          ],
+          "returnType": "int | None",
+          "exported": true,
+          "lineCount": 8
+        },
+        {
+          "name": "_extract_budget_usd",
+          "params": [
+            "text"
+          ],
+          "returnType": "float | None",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "_extract_timezone_hours",
+          "params": [
+            "text"
+          ],
+          "returnType": "float | None",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "_score_curriculum",
+          "params": [
+            "curriculum"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "_score_subject",
+          "params": [
+            "subject"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "_score_timezone",
+          "params": [
+            "offset_h"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 13
+        },
+        {
+          "name": "_score_urgency",
+          "params": [
+            "weeks",
+            "urgency_label"
+          ],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 7
+        },
+        {
+          "name": "_score_budget",
+          "params": [
+            "budget_usd"
+          ],
+          "returnType": "tuple[int, bool]",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "score_tutoring_lead",
+          "params": [
+            "text"
+          ],
+          "returnType": "TutoringScore",
+          "exported": true,
+          "lineCount": 55
+        }
+      ],
+      "classes": [
+        {
+          "name": "TutoringScore",
+          "methods": [
+            "is_in_scope"
+          ],
+          "properties": [
+            "curriculum",
+            "subject",
+            "weeks_to_exam",
+            "urgency",
+            "timezone_offset_hours",
+            "budget_per_hour_usd",
+            "match_score",
+            "score_breakdown",
+            "status",
+            "proposed_rate_usd"
+          ],
+          "exported": true,
+          "lineCount": 15
+        }
+      ],
+      "imports": [
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "dataclasses",
+          "specifiers": [
+            "dataclass"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Literal"
+          ]
+        },
+        {
+          "source": "src.config",
+          "specifiers": [
+            "settings"
+          ]
+        }
+      ],
+      "exports": [
+        "_classify_curriculum",
+        "_classify_subject",
+        "_classify_urgency",
+        "_weeks_to_exam",
+        "_extract_budget_usd",
+        "_extract_timezone_hours",
+        "_score_curriculum",
+        "_score_subject",
+        "_score_timezone",
+        "_score_urgency",
+        "_score_budget",
+        "TutoringScore",
+        "score_tutoring_lead"
+      ],
+      "totalLines": 341,
+      "hasStructuralAnalysis": true
+    },
+    "src/scrapers/__init__.py": {
+      "filePath": "src/scrapers/__init__.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "src/scrapers/base.py": {
+      "filePath": "src/scrapers/base.py",
+      "contentHash": "87ea58be68368e66ed39dc3543ffe76784d3ba429912f7231f87fb4f5170d7a2",
+      "functions": [],
+      "classes": [
+        {
+          "name": "BaseScraper",
+          "methods": [
+            "__init__",
+            "close",
+            "__enter__",
+            "__exit__",
+            "absolute_url",
+            "fetch",
+            "extract_text",
+            "extract_attr",
+            "scrape",
+            "run"
+          ],
+          "properties": [
+            "SOURCE_NAME",
+            "BASE_URL"
+          ],
+          "exported": true,
+          "lineCount": 61
+        }
+      ],
+      "imports": [
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "abc",
+          "specifiers": [
+            "ABC",
+            "abstractmethod"
+          ]
+        },
+        {
+          "source": "urllib.parse",
+          "specifiers": [
+            "urljoin"
+          ]
+        },
+        {
+          "source": "httpx",
+          "specifiers": [
+            "httpx"
+          ]
+        },
+        {
+          "source": "bs4",
+          "specifiers": [
+            "BeautifulSoup"
+          ]
+        }
+      ],
+      "exports": [
+        "BaseScraper"
+      ],
+      "totalLines": 70,
+      "hasStructuralAnalysis": true
+    },
+    "src/scrapers/basis.py": {
+      "filePath": "src/scrapers/basis.py",
+      "contentHash": "f922d66d982fa81f427f0d9578456e864b0e755e37e8b930372c108211c722d6",
+      "functions": [],
+      "classes": [
+        {
+          "name": "BasisScraper",
+          "methods": [
+            "scrape",
+            "_extract_jobs"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 75
+        }
+      ],
+      "imports": [
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "bs4",
+          "specifiers": [
+            "BeautifulSoup"
+          ]
+        },
+        {
+          "source": "src.scrapers.base",
+          "specifiers": [
+            "BaseScraper"
+          ]
+        }
+      ],
+      "exports": [
+        "BasisScraper"
+      ],
+      "totalLines": 93,
+      "hasStructuralAnalysis": true
+    },
+    "src/scrapers/browser_base.py": {
+      "filePath": "src/scrapers/browser_base.py",
+      "contentHash": "f2ccab8b4f1a5f66a7a83a8742a4c408906b0a9e21bd46d47a78cd4af41f3c83",
+      "functions": [],
+      "classes": [
+        {
+          "name": "StealthBrowserScraper",
+          "methods": [
+            "__init__",
+            "_resolve_cookies_path",
+            "get_page_source",
+            "_browser_session",
+            "_pick_screen",
+            "_render",
+            "save_cookies",
+            "load_cookies"
+          ],
+          "properties": [
+            "DEFAULT_VIEWPORTS",
+            "headless",
+            "humanise",
+            "page_load_timeout_ms",
+            "wait_after_load_ms",
+            "cookies_path"
+          ],
+          "exported": true,
+          "lineCount": 216
+        }
+      ],
+      "imports": [
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "tempfile",
+          "specifiers": [
+            "tempfile"
+          ]
+        },
+        {
+          "source": "traceback",
+          "specifiers": [
+            "traceback"
+          ]
+        },
+        {
+          "source": "contextlib",
+          "specifiers": [
+            "contextmanager"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any",
+            "Generator"
+          ]
+        },
+        {
+          "source": "src.scrapers.base",
+          "specifiers": [
+            "BaseScraper"
+          ]
+        }
+      ],
+      "exports": [
+        "StealthBrowserScraper"
+      ],
+      "totalLines": 261,
+      "hasStructuralAnalysis": true
+    },
+    "src/scrapers/dipont.py": {
+      "filePath": "src/scrapers/dipont.py",
+      "contentHash": "fc102f8411a367afdc7ece7f9abe74cc37aa3e658fb3d6c5a74423e5abd8b999",
+      "functions": [],
+      "classes": [
+        {
+          "name": "DipontScraper",
+          "methods": [
+            "scrape",
+            "_extract_jobs"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 69
+        }
+      ],
+      "imports": [
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "bs4",
+          "specifiers": [
+            "BeautifulSoup"
+          ]
+        },
+        {
+          "source": "src.scrapers.base",
+          "specifiers": [
+            "BaseScraper"
+          ]
+        }
+      ],
+      "exports": [
+        "DipontScraper"
+      ],
+      "totalLines": 87,
+      "hasStructuralAnalysis": true
+    },
+    "src/scrapers/gulftalent.py": {
+      "filePath": "src/scrapers/gulftalent.py",
+      "contentHash": "4cad395a7001c2277e9c20df8aa6ec5e6f95ffd11689e941d7072268ce72e707",
+      "functions": [],
+      "classes": [
+        {
+          "name": "GulfTalentScraper",
+          "methods": [
+            "scrape",
+            "_fetch_all_positions",
+            "_shape_job"
+          ],
+          "properties": [
+            "KEYWORDS"
+          ],
+          "exported": true,
+          "lineCount": 180
+        }
+      ],
+      "imports": [
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "src.scrapers.base",
+          "specifiers": [
+            "BaseScraper"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "_os"
+          ]
+        }
+      ],
+      "exports": [
+        "GulfTalentScraper"
+      ],
+      "totalLines": 258,
+      "hasStructuralAnalysis": true
+    },
+    "src/scrapers/libyan_jobs.py": {
+      "filePath": "src/scrapers/libyan_jobs.py",
+      "contentHash": "f2cb251a65712d1b7aa30920e8c4ddb4b0f7b8ed1d4be973fc269cf20f380f30",
+      "functions": [],
+      "classes": [
+        {
+          "name": "LibyanJobsScraper",
+          "methods": [
+            "scrape",
+            "_extract_jobs"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 67
+        }
+      ],
+      "imports": [
+        {
+          "source": "src.scrapers.base",
+          "specifiers": [
+            "BaseScraper"
+          ]
+        }
+      ],
+      "exports": [
+        "LibyanJobsScraper"
+      ],
+      "totalLines": 71,
+      "hasStructuralAnalysis": true
+    },
+    "src/scrapers/linkedin.py": {
+      "filePath": "src/scrapers/linkedin.py",
+      "contentHash": "ac60ead1f5374be0d58469f1ddd0c4186ce94e84b423d440f6029cbc89ddc34e",
+      "functions": [],
+      "classes": [
+        {
+          "name": "LinkedInScraper",
+          "methods": [
+            "scrape",
+            "_fetch_linkedin_jobs",
+            "_enc",
+            "_soup_from_text",
+            "_infer_curriculum"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 131
+        }
+      ],
+      "imports": [
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "src.scrapers.base",
+          "specifiers": [
+            "BaseScraper"
+          ]
+        }
+      ],
+      "exports": [
+        "LinkedInScraper"
+      ],
+      "totalLines": 157,
+      "hasStructuralAnalysis": true
+    },
+    "src/scrapers/schrole.py": {
+      "filePath": "src/scrapers/schrole.py",
+      "contentHash": "5ccadf9b0ba0e3d1e539cccb3c7195a13e4d996f588e411be759f6f36e36c533",
+      "functions": [],
+      "classes": [
+        {
+          "name": "SchroleScraper",
+          "methods": [
+            "scrape"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 6
+        }
+      ],
+      "imports": [
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "src.scrapers.base",
+          "specifiers": [
+            "BaseScraper"
+          ]
+        }
+      ],
+      "exports": [
+        "SchroleScraper"
+      ],
+      "totalLines": 15,
+      "hasStructuralAnalysis": true
+    },
+    "src/scrapers/search_associates.py": {
+      "filePath": "src/scrapers/search_associates.py",
+      "contentHash": "4c52f2c8b5c7314cdc400448552626f6b76befcf754c30f8e6963de751e17f5f",
+      "functions": [],
+      "classes": [
+        {
+          "name": "SearchAssociatesScraper",
+          "methods": [
+            "scrape",
+            "_scrape_under_browser",
+            "_attempt_authenticated_session",
+            "_is_session_valid",
+            "_login_with_credentials",
+            "_fetch_job_listings",
+            "_extract_jobs",
+            "_credentials_configured"
+          ],
+          "properties": [
+            "cookies_path",
+            "page_load_timeout_ms",
+            "wait_after_load_ms"
+          ],
+          "exported": true,
+          "lineCount": 221
+        }
+      ],
+      "imports": [
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "src.config",
+          "specifiers": [
+            "settings"
+          ]
+        },
+        {
+          "source": "src.scrapers.browser_base",
+          "specifiers": [
+            "StealthBrowserScraper"
+          ]
+        }
+      ],
+      "exports": [
+        "SearchAssociatesScraper"
+      ],
+      "totalLines": 270,
+      "hasStructuralAnalysis": true
+    },
+    "src/scrapers/teacher_horizons.py": {
+      "filePath": "src/scrapers/teacher_horizons.py",
+      "contentHash": "0d35748d96bfd8b914cbf9f38e9faaf6867bf85b9b350eccb67bc5c0b5249144",
+      "functions": [],
+      "classes": [
+        {
+          "name": "TeacherHorizonsScraper",
+          "methods": [
+            "scrape",
+            "_scrape_under_browser",
+            "_attempt_authenticated_session",
+            "_is_session_valid",
+            "_login_with_credentials",
+            "_fetch_job_listings",
+            "_extract_jobs",
+            "_build_url",
+            "_credentials_configured"
+          ],
+          "properties": [
+            "cookies_path",
+            "page_load_timeout_ms",
+            "wait_after_load_ms"
+          ],
+          "exported": true,
+          "lineCount": 229
+        }
+      ],
+      "imports": [
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "src.config",
+          "specifiers": [
+            "settings"
+          ]
+        },
+        {
+          "source": "src.scrapers.browser_base",
+          "specifiers": [
+            "StealthBrowserScraper"
+          ]
+        }
+      ],
+      "exports": [
+        "TeacherHorizonsScraper"
+      ],
+      "totalLines": 300,
+      "hasStructuralAnalysis": true
+    },
+    "src/scrapers/tes.py": {
+      "filePath": "src/scrapers/tes.py",
+      "contentHash": "054636f33f9fd832b15d9ddfa3f0aad7f93b74233c51128bbc028568b83d733a",
+      "functions": [],
+      "classes": [
+        {
+          "name": "TESScraper",
+          "methods": [
+            "scrape",
+            "_extract_from_json",
+            "_extract_from_html",
+            "_parse_job",
+            "_infer_curriculum"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 132
+        }
+      ],
+      "imports": [
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "re",
+          "specifiers": [
+            "re"
+          ]
+        },
+        {
+          "source": "urllib.parse",
+          "specifiers": [
+            "quote"
+          ]
+        },
+        {
+          "source": "src.scrapers.base",
+          "specifiers": [
+            "BaseScraper"
+          ]
+        }
+      ],
+      "exports": [
+        "TESScraper"
+      ],
+      "totalLines": 140,
+      "hasStructuralAnalysis": true
+    },
+    "src/scrapers/toptutorjob.py": {
+      "filePath": "src/scrapers/toptutorjob.py",
+      "contentHash": "baa2ae585af7887759d5318759e1ba2c6b43323ea1ee06aae578703b34f57802",
+      "functions": [],
+      "classes": [
+        {
+          "name": "TopTutorJobScraper",
+          "methods": [
+            "scrape",
+            "_pick_container_selector",
+            "_extract_jobs"
+          ],
+          "properties": [
+            "page_load_timeout_ms",
+            "wait_after_load_ms"
+          ],
+          "exported": true,
+          "lineCount": 159
+        }
+      ],
+      "imports": [
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "src.scrapers.browser_base",
+          "specifiers": [
+            "StealthBrowserScraper"
+          ]
+        }
+      ],
+      "exports": [
+        "TopTutorJobScraper"
+      ],
+      "totalLines": 215,
+      "hasStructuralAnalysis": true
+    },
+    "src/storage/__init__.py": {
+      "filePath": "src/storage/__init__.py",
+      "contentHash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": true
+    },
+    "src/storage/dedup_store.py": {
+      "filePath": "src/storage/dedup_store.py",
+      "contentHash": "2ac0f5ef2aa444bf1be2183c92a799fbeb487822b5e19cd0dabd5d03403e536e",
+      "functions": [],
+      "classes": [
+        {
+          "name": "DedupStore",
+          "methods": [
+            "__init__",
+            "_init_tables",
+            "get_seen_urls",
+            "mark_seen",
+            "cache_jobs",
+            "get_unscored",
+            "get_scored_unnotified",
+            "update_score",
+            "mark_notified",
+            "close"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 84
+        }
+      ],
+      "imports": [
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "sqlite3",
+          "specifiers": [
+            "sqlite3"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        }
+      ],
+      "exports": [
+        "DedupStore"
+      ],
+      "totalLines": 96,
+      "hasStructuralAnalysis": true
+    },
+    "src/storage/supabase_client.py": {
+      "filePath": "src/storage/supabase_client.py",
+      "contentHash": "694f35bd6767b5fc348318b72141e6fa1dc930136f962c9d2d51ca6d029006ab",
+      "functions": [],
+      "classes": [
+        {
+          "name": "SupabaseClient",
+          "methods": [
+            "__init__",
+            "close",
+            "health_check",
+            "get_seen_urls",
+            "upsert_jobs",
+            "get_unscored_jobs",
+            "get_unscored_from_dedup",
+            "update_score",
+            "get_scored_unnotified",
+            "mark_notified",
+            "get_recent"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 120
+        }
+      ],
+      "imports": [
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "date",
+            "datetime"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "httpx",
+          "specifiers": [
+            "httpx"
+          ]
+        },
+        {
+          "source": "supabase",
+          "specifiers": [
+            "create_client",
+            "Client"
+          ]
+        },
+        {
+          "source": "src.config",
+          "specifiers": [
+            "settings"
+          ]
+        },
+        {
+          "source": "src.storage.dedup_store",
+          "specifiers": [
+            "DedupStore"
+          ]
+        }
+      ],
+      "exports": [
+        "SupabaseClient"
+      ],
+      "totalLines": 134,
+      "hasStructuralAnalysis": true
+    },
+    "src/storage/tutoring_leads.py": {
+      "filePath": "src/storage/tutoring_leads.py",
+      "contentHash": "7165984e48167d694aa1a8bb4bccdbe1c3d7d9a55975d3520e6d1edc883887ed",
+      "functions": [],
+      "classes": [
+        {
+          "name": "TutoringLeadStorage",
+          "methods": [
+            "__init__",
+            "health_check",
+            "insert_lead",
+            "get_pending_parses",
+            "save_parse",
+            "list_leads",
+            "get_lead",
+            "update_status",
+            "save_proposal",
+            "counts_current_month"
+          ],
+          "properties": [],
+          "exported": true,
+          "lineCount": 129
+        }
+      ],
+      "imports": [
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "datetime",
+          "specifiers": [
+            "datetime"
+          ]
+        },
+        {
+          "source": "typing",
+          "specifiers": [
+            "Any"
+          ]
+        },
+        {
+          "source": "httpx",
+          "specifiers": [
+            "httpx"
+          ]
+        },
+        {
+          "source": "supabase",
+          "specifiers": [
+            "create_client",
+            "Client"
+          ]
+        },
+        {
+          "source": "src.config",
+          "specifiers": [
+            "settings"
+          ]
+        }
+      ],
+      "exports": [
+        "TutoringLeadStorage"
+      ],
+      "totalLines": 165,
+      "hasStructuralAnalysis": true
+    },
+    "stealth_browser.py": {
+      "filePath": "stealth_browser.py",
+      "contentHash": "24477f0256b329e3c066372df8e9e34cd620594a7d1f7f17359e8f0bc25a7953",
+      "functions": [
+        {
+          "name": "_decompress_zstd",
+          "params": [
+            "body"
+          ],
+          "returnType": "bytes",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "inject_into_html",
+          "params": [
+            "route"
+          ],
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "launch_browser",
+          "params": [],
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "main",
+          "params": [],
+          "exported": true,
+          "lineCount": 45
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "asyncio",
+          "specifiers": [
+            "asyncio"
+          ]
+        },
+        {
+          "source": "io",
+          "specifiers": [
+            "io"
+          ]
+        },
+        {
+          "source": "zstandard",
+          "specifiers": [
+            "zstd"
+          ]
+        },
+        {
+          "source": "camoufox",
+          "specifiers": [
+            "AsyncCamoufox"
+          ]
+        }
+      ],
+      "exports": [
+        "_decompress_zstd",
+        "inject_into_html",
+        "launch_browser",
+        "main"
+      ],
+      "totalLines": 123,
+      "hasStructuralAnalysis": true
+    },
+    "test_camoufox.py": {
+      "filePath": "test_camoufox.py",
+      "contentHash": "510b5f08796056186c948242ad9d1f11375956f0dc1690efdae8ef68d2106356",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "camoufox",
+          "specifiers": [
+            "Camoufox"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 13,
+      "hasStructuralAnalysis": true
+    },
+    "tests/test_gemini_smoke.py": {
+      "filePath": "tests/test_gemini_smoke.py",
+      "contentHash": "8b6f4c0d4a6509786cec059b46c1ea246298ea87065d6e8e292e8d6a792ab5bc",
+      "functions": [
+        {
+          "name": "smoke_init",
+          "params": [],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 9
+        },
+        {
+          "name": "smoke_score",
+          "params": [],
+          "returnType": "bool",
+          "exported": true,
+          "lineCount": 31
+        },
+        {
+          "name": "main",
+          "params": [],
+          "exported": true,
+          "lineCount": 9
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "json",
+          "specifiers": [
+            "json"
+          ]
+        },
+        {
+          "source": "logging",
+          "specifiers": [
+            "logging"
+          ]
+        },
+        {
+          "source": "src.scoring.llm_scorer",
+          "specifiers": [
+            "LLMScorer"
+          ]
+        }
+      ],
+      "exports": [
+        "smoke_init",
+        "smoke_score",
+        "main"
+      ],
+      "totalLines": 84,
+      "hasStructuralAnalysis": true
+    },
+    "tests/test_tutoring_smoke.py": {
+      "filePath": "tests/test_tutoring_smoke.py",
+      "contentHash": "51d172b81f9ee7bbb78965379286418b97e2bdbb6f7164f4f736f509ddca1a1f",
+      "functions": [
+        {
+          "name": "assert_eq",
+          "params": [
+            "label",
+            "got",
+            "want"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "assert_between",
+          "params": [
+            "label",
+            "got",
+            "lo",
+            "hi"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "assert_truthy",
+          "params": [
+            "label",
+            "got"
+          ],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "test_scorer_gulf_igcse_edexcel_strong",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 15
+        },
+        {
+          "name": "test_scorer_a_level_cambridge_london_uk",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "test_scorer_below_budget_floor",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "test_scorer_out_of_scope_ib",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "test_scorer_combined_science",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "test_scorer_minimal_message_yields_low_score",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "test_parser_returns_brief_for_empty",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 5
+        },
+        {
+          "name": "test_parser_returns_brief_for_real_text",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "test_fallback_brief_seeds_pain_points",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 12
+        },
+        {
+          "name": "test_proposal_template_mode",
+          "params": [],
+          "returnType": "None",
+          "exported": true,
+          "lineCount": 21
+        },
+        {
+          "name": "score_text_or_excerpt_for_fallback",
+          "params": [
+            "score",
+            "raw"
+          ],
+          "exported": true,
+          "lineCount": 2
+        },
+        {
+          "name": "main",
+          "params": [],
+          "returnType": "int",
+          "exported": true,
+          "lineCount": 32
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "os",
+          "specifiers": [
+            "os"
+          ]
+        },
+        {
+          "source": "sys",
+          "specifiers": [
+            "sys"
+          ]
+        },
+        {
+          "source": "tempfile",
+          "specifiers": [
+            "tempfile"
+          ]
+        },
+        {
+          "source": "pathlib",
+          "specifiers": [
+            "Path"
+          ]
+        },
+        {
+          "source": "src.agents.models",
+          "specifiers": [
+            "TutoringBrief"
+          ]
+        },
+        {
+          "source": "src.agents.tutoring_parser",
+          "specifiers": [
+            "parse_to_dict"
+          ]
+        },
+        {
+          "source": "src.generators",
+          "specifiers": [
+            "tutoring_proposal"
+          ]
+        },
+        {
+          "source": "src.scoring.tutoring_scorer",
+          "specifiers": [
+            "score_tutoring_lead"
+          ]
+        }
+      ],
+      "exports": [
+        "assert_eq",
+        "assert_between",
+        "assert_truthy",
+        "test_scorer_gulf_igcse_edexcel_strong",
+        "test_scorer_a_level_cambridge_london_uk",
+        "test_scorer_below_budget_floor",
+        "test_scorer_out_of_scope_ib",
+        "test_scorer_combined_science",
+        "test_scorer_minimal_message_yields_low_score",
+        "test_parser_returns_brief_for_empty",
+        "test_parser_returns_brief_for_real_text",
+        "test_fallback_brief_seeds_pain_points",
+        "test_proposal_template_mode",
+        "score_text_or_excerpt_for_fallback",
+        "main"
+      ],
+      "totalLines": 239,
+      "hasStructuralAnalysis": true
+    },
+    "web/.pnpm-approve-builds.json": {
+      "filePath": "web/.pnpm-approve-builds.json",
+      "contentHash": "506f86cddd8731249bcc53c27bcb8ea63abf31fe00c0961934a1ffe85353f316",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 2,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/api/jobs/options/route.ts": {
+      "filePath": "web/app/api/jobs/options/route.ts",
+      "contentHash": "b70fde50c6d9b4adb90d1d299658dc32a1e1d01804fec39c4a71ef6e48fcfb0c",
+      "functions": [
+        {
+          "name": "GET",
+          "params": [],
+          "exported": true,
+          "lineCount": 46
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next/server",
+          "specifiers": [
+            "NextResponse"
+          ]
+        },
+        {
+          "source": "@/lib/supabase/server",
+          "specifiers": [
+            "getSupabaseServer",
+            "isSupabaseConfigured"
+          ]
+        },
+        {
+          "source": "@/lib/types/job",
+          "specifiers": [
+            "JobFilterOptions"
+          ]
+        }
+      ],
+      "exports": [
+        "dynamic",
+        "GET"
+      ],
+      "totalLines": 58,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/api/jobs/route.ts": {
+      "filePath": "web/app/api/jobs/route.ts",
+      "contentHash": "d6d41c8f23d62269cd2a4adf6c455d3655b9efd37eb8be707b6a389bb8dc70dc",
+      "functions": [
+        {
+          "name": "GET",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 77
+        },
+        {
+          "name": "applyFilters",
+          "params": [
+            "builder",
+            "args"
+          ],
+          "returnType": "T",
+          "exported": false,
+          "lineCount": 23
+        },
+        {
+          "name": "clampInt",
+          "params": [
+            "raw",
+            "fallback",
+            "min",
+            "max"
+          ],
+          "returnType": "number",
+          "exported": false,
+          "lineCount": 11
+        },
+        {
+          "name": "parseIntRange",
+          "params": [
+            "raw",
+            "min",
+            "max"
+          ],
+          "returnType": "number | null",
+          "exported": false,
+          "lineCount": 10
+        },
+        {
+          "name": "parseSortKey",
+          "params": [
+            "raw"
+          ],
+          "returnType": "JobSortKey",
+          "exported": false,
+          "lineCount": 4
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next/server",
+          "specifiers": [
+            "NextRequest",
+            "NextResponse"
+          ]
+        },
+        {
+          "source": "@/lib/supabase/server",
+          "specifiers": [
+            "getSupabaseServer",
+            "isSupabaseConfigured"
+          ]
+        },
+        {
+          "source": "@/lib/types/job",
+          "specifiers": [
+            "Job",
+            "JobListResponse"
+          ]
+        },
+        {
+          "source": "@/lib/types/job",
+          "specifiers": [
+            "JobSortKey"
+          ]
+        }
+      ],
+      "exports": [
+        "dynamic",
+        "revalidate",
+        "GET"
+      ],
+      "totalLines": 166,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/api/leads/[id]/status/route.ts": {
+      "filePath": "web/app/api/leads/[id]/status/route.ts",
+      "contentHash": "1c941698971e52380ac11944cbb9097032b0fe0fd22c997e279a0b6c8cb4f743",
+      "functions": [
+        {
+          "name": "POST",
+          "params": [
+            "request",
+            "{ params }"
+          ],
+          "exported": true,
+          "lineCount": 45
+        },
+        {
+          "name": "GET",
+          "params": [
+            "_request",
+            "{ params }"
+          ],
+          "exported": true,
+          "lineCount": 40
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next/server",
+          "specifiers": [
+            "NextRequest",
+            "NextResponse"
+          ]
+        },
+        {
+          "source": "@/lib/api/guards",
+          "specifiers": [
+            "authorise"
+          ]
+        },
+        {
+          "source": "@/lib/supabase/server",
+          "specifiers": [
+            "getSupabaseServer"
+          ]
+        }
+      ],
+      "exports": [
+        "dynamic",
+        "POST",
+        "GET"
+      ],
+      "totalLines": 108,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/api/leads/counts/route.ts": {
+      "filePath": "web/app/api/leads/counts/route.ts",
+      "contentHash": "705352ef68a4fba3e32985f1d5616faf42389b4c98271a5002ca7c4201332794",
+      "functions": [
+        {
+          "name": "GET",
+          "params": [],
+          "exported": true,
+          "lineCount": 32
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next/server",
+          "specifiers": [
+            "NextResponse"
+          ]
+        },
+        {
+          "source": "@/lib/supabase/server",
+          "specifiers": [
+            "getSupabaseServer"
+          ]
+        }
+      ],
+      "exports": [
+        "dynamic",
+        "GET"
+      ],
+      "totalLines": 51,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/api/leads/manual/route.ts": {
+      "filePath": "web/app/api/leads/manual/route.ts",
+      "contentHash": "b170fb171b1b42b626173b8b544db06cbbd3aa3702b47b29e54d013716fb4c1a",
+      "functions": [
+        {
+          "name": "POST",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 49
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next/server",
+          "specifiers": [
+            "NextRequest",
+            "NextResponse"
+          ]
+        },
+        {
+          "source": "@/lib/api/guards",
+          "specifiers": [
+            "authorise"
+          ]
+        },
+        {
+          "source": "@/lib/supabase/server",
+          "specifiers": [
+            "getSupabaseServer"
+          ]
+        }
+      ],
+      "exports": [
+        "dynamic",
+        "POST"
+      ],
+      "totalLines": 63,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/api/leads/route.ts": {
+      "filePath": "web/app/api/leads/route.ts",
+      "contentHash": "694515343e3544fe890e0ae34640f187b0a8126c5a82088655eed9004a2af194",
+      "functions": [
+        {
+          "name": "GET",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 41
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next/server",
+          "specifiers": [
+            "NextRequest",
+            "NextResponse"
+          ]
+        },
+        {
+          "source": "@/lib/supabase/server",
+          "specifiers": [
+            "getSupabaseServer"
+          ]
+        }
+      ],
+      "exports": [
+        "dynamic",
+        "GET"
+      ],
+      "totalLines": 60,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/api/pipeline/logs/route.ts": {
+      "filePath": "web/app/api/pipeline/logs/route.ts",
+      "contentHash": "96e1f1bce4e84b9186fa9211f251071a7a02782b5fe8ee3652337fc9a1e8e8d2",
+      "functions": [
+        {
+          "name": "GET",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 34
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next/server",
+          "specifiers": [
+            "NextRequest",
+            "NextResponse"
+          ]
+        }
+      ],
+      "exports": [
+        "dynamic",
+        "GET"
+      ],
+      "totalLines": 42,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/api/pipeline/run/route.ts": {
+      "filePath": "web/app/api/pipeline/run/route.ts",
+      "contentHash": "3e39aedf311596eead2f9d989fa9ed05bbde08516fceae070112933dab56f991",
+      "functions": [
+        {
+          "name": "POST",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 36
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next/server",
+          "specifiers": [
+            "NextRequest",
+            "NextResponse"
+          ]
+        },
+        {
+          "source": "@/lib/api/guards",
+          "specifiers": [
+            "authorise"
+          ]
+        }
+      ],
+      "exports": [
+        "dynamic",
+        "POST"
+      ],
+      "totalLines": 51,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/api/pipeline/start/route.ts": {
+      "filePath": "web/app/api/pipeline/start/route.ts",
+      "contentHash": "0faf57fc0d1fd1d217a155fde29ce6f8d55b91cac9aa9691f7534f8add79db11",
+      "functions": [
+        {
+          "name": "POST",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 13
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next/server",
+          "specifiers": [
+            "NextRequest",
+            "NextResponse"
+          ]
+        },
+        {
+          "source": "@/lib/api/guards",
+          "specifiers": [
+            "authorise",
+            "runSystemctl"
+          ]
+        }
+      ],
+      "exports": [
+        "dynamic",
+        "POST"
+      ],
+      "totalLines": 21,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/api/pipeline/status/route.ts": {
+      "filePath": "web/app/api/pipeline/status/route.ts",
+      "contentHash": "0e802a5f2e335af5dff06b29b160f3f1cd78b2258a64ad00de0b9ce1826fa5f6",
+      "functions": [
+        {
+          "name": "GET",
+          "params": [],
+          "returnType": "Promise<NextResponse<PipelineStatus>>",
+          "exported": true,
+          "lineCount": 37
+        },
+        {
+          "name": "parseShow",
+          "params": [
+            "stdout"
+          ],
+          "returnType": "Map<string, string>",
+          "exported": false,
+          "lineCount": 12
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next/server",
+          "specifiers": [
+            "NextResponse"
+          ]
+        },
+        {
+          "source": "@/lib/api/guards",
+          "specifiers": [
+            "runSystemctl"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/StatusBadge",
+          "specifiers": [
+            "BadgeStatus"
+          ]
+        }
+      ],
+      "exports": [
+        "dynamic",
+        "GET"
+      ],
+      "totalLines": 70,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/api/pipeline/stop/route.ts": {
+      "filePath": "web/app/api/pipeline/stop/route.ts",
+      "contentHash": "080d3d4ff9fded6f0d0348e73868e22fcb05a95566a9409210acda64c1477e49",
+      "functions": [
+        {
+          "name": "POST",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 13
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next/server",
+          "specifiers": [
+            "NextRequest",
+            "NextResponse"
+          ]
+        },
+        {
+          "source": "@/lib/api/guards",
+          "specifiers": [
+            "authorise",
+            "runSystemctl"
+          ]
+        }
+      ],
+      "exports": [
+        "dynamic",
+        "POST"
+      ],
+      "totalLines": 21,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/api/settings/route.ts": {
+      "filePath": "web/app/api/settings/route.ts",
+      "contentHash": "b55b4d483aadd05b4b0ce96f4f3c655572e14de748e1a413299b50385e2c19fb",
+      "functions": [
+        {
+          "name": "GET",
+          "params": [],
+          "exported": true,
+          "lineCount": 4
+        },
+        {
+          "name": "POST",
+          "params": [
+            "request"
+          ],
+          "exported": true,
+          "lineCount": 23
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next/server",
+          "specifiers": [
+            "NextRequest",
+            "NextResponse"
+          ]
+        },
+        {
+          "source": "@/lib/api/settings-store",
+          "specifiers": [
+            "readSettings",
+            "writeSettings"
+          ]
+        },
+        {
+          "source": "@/lib/api/guards",
+          "specifiers": [
+            "authorise"
+          ]
+        }
+      ],
+      "exports": [
+        "dynamic",
+        "GET",
+        "POST"
+      ],
+      "totalLines": 41,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/jobs/Chips.tsx": {
+      "filePath": "web/app/components/jobs/Chips.tsx",
+      "contentHash": "48ba7258da4b4f85cdcc8e2e21e4ded754e98d990d4a52124d25b889b1680174",
+      "functions": [
+        {
+          "name": "Chips",
+          "params": [
+            "{ items, className, emptyLabel = \"—\" }"
+          ],
+          "exported": true,
+          "lineCount": 17
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        }
+      ],
+      "exports": [
+        "Chips"
+      ],
+      "totalLines": 28,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/jobs/JobDetailDrawer.tsx": {
+      "filePath": "web/app/components/jobs/JobDetailDrawer.tsx",
+      "contentHash": "4903fd596abcc3fab7410e6a1d4c0c81ac596fc0d573eda974f153259fae9dd4",
+      "functions": [
+        {
+          "name": "JobDetailDrawer",
+          "params": [
+            "{ job, onClose }"
+          ],
+          "exported": true,
+          "lineCount": 114
+        },
+        {
+          "name": "Field",
+          "params": [
+            "{\n  icon: Icon,\n  label,\n  children,\n}"
+          ],
+          "exported": false,
+          "lineCount": 21
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useEffect",
+            "useRef"
+          ]
+        },
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "X",
+            "ExternalLink",
+            "MapPin",
+            "Building2",
+            "GraduationCap",
+            "Banknote",
+            "Calendar",
+            "Bell",
+            "LucideIcon"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/Button",
+          "specifiers": [
+            "Button"
+          ]
+        },
+        {
+          "source": "./ScoreBadge",
+          "specifiers": [
+            "ScoreBadge"
+          ]
+        },
+        {
+          "source": "./Chips",
+          "specifiers": [
+            "Chips"
+          ]
+        },
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "formatBritishDate",
+            "formatBritishDateTime"
+          ]
+        },
+        {
+          "source": "@/lib/types/job",
+          "specifiers": [
+            "Job"
+          ]
+        },
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        }
+      ],
+      "exports": [
+        "JobDetailDrawer"
+      ],
+      "totalLines": 156,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/jobs/JobTable.tsx": {
+      "filePath": "web/app/components/jobs/JobTable.tsx",
+      "contentHash": "da4059bebd9f8229247b6fd0e57a33c055c3ae2b9fe21ee5fd60adc7ccbc80e6",
+      "functions": [
+        {
+          "name": "JobTable",
+          "params": [
+            "{\n  jobs,\n  total,\n  loading,\n  error,\n  page,\n  pageSize,\n  sortKey,\n  sortDir,\n  onSort,\n  onPage,\n  onPageSize,\n  onRetry,\n}"
+          ],
+          "exported": true,
+          "lineCount": 139
+        },
+        {
+          "name": "SortableHeader",
+          "params": [
+            "{\n  label,\n  active,\n  dir,\n  onClick,\n}"
+          ],
+          "exported": false,
+          "lineCount": 30
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useState"
+          ]
+        },
+        {
+          "source": "next/dynamic",
+          "specifiers": [
+            "dynamic"
+          ]
+        },
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "ArrowDown",
+            "ArrowUp",
+            "ArrowUpDown",
+            "Inbox",
+            "Bell",
+            "MapPin"
+          ]
+        },
+        {
+          "source": "./ScoreBadge",
+          "specifiers": [
+            "ScoreBadge"
+          ]
+        },
+        {
+          "source": "./Chips",
+          "specifiers": [
+            "Chips"
+          ]
+        },
+        {
+          "source": "./JobTableSkeleton",
+          "specifiers": [
+            "JobTableSkeleton"
+          ]
+        },
+        {
+          "source": "./Pagination",
+          "specifiers": [
+            "Pagination"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/EmptyState",
+          "specifiers": [
+            "EmptyState"
+          ]
+        },
+        {
+          "source": "@/lib/types/job",
+          "specifiers": [
+            "Job",
+            "JobSortKey",
+            "SortDirection"
+          ]
+        },
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "formatBritishDate"
+          ]
+        },
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        }
+      ],
+      "exports": [
+        "JobTable"
+      ],
+      "totalLines": 226,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/jobs/JobTableFilters.tsx": {
+      "filePath": "web/app/components/jobs/JobTableFilters.tsx",
+      "contentHash": "fcda295ec34b59dac120808836e0c48f1f2fcc44c8524eeb2eb2ab469afdc665",
+      "functions": [
+        {
+          "name": "JobTableFilters",
+          "params": [
+            "{\n  sources,\n  countries,\n  curriculum_boards,\n  className,\n}"
+          ],
+          "exported": true,
+          "lineCount": 118
+        },
+        {
+          "name": "FilterSelect",
+          "params": [
+            "{\n  id,\n  label,\n  value,\n  onChange,\n  options,\n  allLabel,\n}"
+          ],
+          "exported": false,
+          "lineCount": 32
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "Search",
+            "X"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/Toggle",
+          "specifiers": [
+            "Toggle"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/Button",
+          "specifiers": [
+            "Button"
+          ]
+        },
+        {
+          "source": "@/lib/store/jobs",
+          "specifiers": [
+            "useJobsStore"
+          ]
+        },
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        }
+      ],
+      "exports": [
+        "JobTableFilters"
+      ],
+      "totalLines": 179,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/jobs/JobTableSkeleton.tsx": {
+      "filePath": "web/app/components/jobs/JobTableSkeleton.tsx",
+      "contentHash": "3b65cef00e0fda177b87bdaae1b255342553d9eea2311258973051806f99e232",
+      "functions": [
+        {
+          "name": "JobTableSkeleton",
+          "params": [
+            "{ rows = 8 }"
+          ],
+          "exported": true,
+          "lineCount": 30
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/app/components/ui/Skeleton",
+          "specifiers": [
+            "Skeleton"
+          ]
+        }
+      ],
+      "exports": [
+        "JobTableSkeleton"
+      ],
+      "totalLines": 35,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/jobs/Pagination.tsx": {
+      "filePath": "web/app/components/jobs/Pagination.tsx",
+      "contentHash": "7f177f88fafa16b2eb779d13fb32c8ddf614278fc82f07f3459bdd267f0972f0",
+      "functions": [
+        {
+          "name": "Pagination",
+          "params": [
+            "{\n  page,\n  pageSize,\n  total,\n  onPage,\n  onPageSize,\n  className,\n}"
+          ],
+          "exported": true,
+          "lineCount": 81
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "ChevronLeft",
+            "ChevronRight"
+          ]
+        },
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        }
+      ],
+      "exports": [
+        "Pagination"
+      ],
+      "totalLines": 101,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/jobs/ScoreBadge.tsx": {
+      "filePath": "web/app/components/jobs/ScoreBadge.tsx",
+      "contentHash": "0b4e07538b743d91cf4cac14ea8baced93fa2f62f3368a80b0754845ed6a2b1d",
+      "functions": [
+        {
+          "name": "ScoreBadge",
+          "params": [
+            "{ score, className }"
+          ],
+          "exported": true,
+          "lineCount": 15
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/lib/types/job",
+          "specifiers": [
+            "scoreBand"
+          ]
+        },
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        }
+      ],
+      "exports": [
+        "ScoreBadge"
+      ],
+      "totalLines": 34,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/layout/Sidebar.tsx": {
+      "filePath": "web/app/components/layout/Sidebar.tsx",
+      "contentHash": "e210fcf2158020fbe92e9e37aecf2beb205471d0f00af818249e99ec696c271f",
+      "functions": [
+        {
+          "name": "Sidebar",
+          "params": [],
+          "exported": true,
+          "lineCount": 75
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next/link",
+          "specifiers": [
+            "Link"
+          ]
+        },
+        {
+          "source": "next/navigation",
+          "specifiers": [
+            "usePathname"
+          ]
+        },
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "LayoutDashboard",
+            "Workflow",
+            "Settings",
+            "Atom",
+            "Users"
+          ]
+        },
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        }
+      ],
+      "exports": [
+        "Sidebar"
+      ],
+      "totalLines": 99,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/ui/Button.tsx": {
+      "filePath": "web/app/components/ui/Button.tsx",
+      "contentHash": "2f029ae916675e8cfefa3df8f51bfb3b0435eb8777531be5fe37b0f4c3838128",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "forwardRef"
+          ]
+        },
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "Loader2",
+            "LucideIcon"
+          ]
+        },
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        }
+      ],
+      "exports": [
+        "Button"
+      ],
+      "totalLines": 77,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/ui/Card.tsx": {
+      "filePath": "web/app/components/ui/Card.tsx",
+      "contentHash": "2dfbab51470cc87ef9ee2f37623f913e597748b94ec5d3a508f2b9e4a7f31ab3",
+      "functions": [
+        {
+          "name": "Card",
+          "params": [
+            "{ padded = true, className, children, ...rest }"
+          ],
+          "exported": true,
+          "lineCount": 14
+        },
+        {
+          "name": "CardHeader",
+          "params": [
+            "{\n  title,\n  description,\n  action,\n  icon: Icon,\n  className,\n}"
+          ],
+          "exported": true,
+          "lineCount": 30
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        },
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "LucideIcon"
+          ]
+        }
+      ],
+      "exports": [
+        "Card",
+        "CardHeader"
+      ],
+      "totalLines": 56,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/ui/EmptyState.tsx": {
+      "filePath": "web/app/components/ui/EmptyState.tsx",
+      "contentHash": "6005676f7bcc03d0105bf51742fea599b0df38522897155501368a2ecf07c0f1",
+      "functions": [
+        {
+          "name": "EmptyState",
+          "params": [
+            "{\n  title,\n  description,\n  icon: Icon,\n  action,\n  className,\n}"
+          ],
+          "exported": true,
+          "lineCount": 27
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "LucideIcon"
+          ]
+        },
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        }
+      ],
+      "exports": [
+        "EmptyState"
+      ],
+      "totalLines": 42,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/ui/NumberInput.tsx": {
+      "filePath": "web/app/components/ui/NumberInput.tsx",
+      "contentHash": "966bae2b107239ed312048290338e75b160123879382ee640aff8126ad723152",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "forwardRef"
+          ]
+        },
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "Minus",
+            "Plus"
+          ]
+        },
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        }
+      ],
+      "exports": [
+        "NumberInput"
+      ],
+      "totalLines": 88,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/ui/Skeleton.tsx": {
+      "filePath": "web/app/components/ui/Skeleton.tsx",
+      "contentHash": "ddadaf2fe7bd108d459ef8313b20877b0149bbc0325fc3cb7db9339a68b8d353",
+      "functions": [
+        {
+          "name": "Skeleton",
+          "params": [
+            "{ className }"
+          ],
+          "exported": true,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        }
+      ],
+      "exports": [
+        "Skeleton"
+      ],
+      "totalLines": 13,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/ui/Slider.tsx": {
+      "filePath": "web/app/components/ui/Slider.tsx",
+      "contentHash": "ffe33b7a0eb8977cd2bb455501bc47e1207c98c60911367985414beec140bd64",
+      "functions": [
+        {
+          "name": "Slider",
+          "params": [
+            "{\n  value,\n  min = 0,\n  max = 100,\n  step = 1,\n  onChange,\n  label,\n  valueSuffix,\n  id,\n  disabled,\n  className,\n}"
+          ],
+          "exported": true,
+          "lineCount": 47
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        }
+      ],
+      "exports": [
+        "Slider"
+      ],
+      "totalLines": 70,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/ui/Spinner.tsx": {
+      "filePath": "web/app/components/ui/Spinner.tsx",
+      "contentHash": "2b7078f281f4eb8dd7d210b2abb97056a2cfe0ecb2454aa9c0baeab99a74677b",
+      "functions": [
+        {
+          "name": "Spinner",
+          "params": [
+            "{\n  label = \"Loading\",\n  className,\n  size = \"md\",\n}"
+          ],
+          "exported": true,
+          "lineCount": 19
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "Loader2"
+          ]
+        },
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        }
+      ],
+      "exports": [
+        "Spinner"
+      ],
+      "totalLines": 33,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/ui/StatusBadge.tsx": {
+      "filePath": "web/app/components/ui/StatusBadge.tsx",
+      "contentHash": "d999ba8e00a731982296c4bf8e0a40cba89004efe0dedee5cfb716f6f007032d",
+      "functions": [
+        {
+          "name": "StatusBadge",
+          "params": [
+            "{ status, className }"
+          ],
+          "exported": true,
+          "lineCount": 32
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        }
+      ],
+      "exports": [
+        "StatusBadge"
+      ],
+      "totalLines": 66,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/ui/Toast.tsx": {
+      "filePath": "web/app/components/ui/Toast.tsx",
+      "contentHash": "d0ee60de8cf04c785e0cc21d76207e5c4e1bc0213c651c1c79e5b3f00c16221f",
+      "functions": [
+        {
+          "name": "ToastViewport",
+          "params": [],
+          "exported": true,
+          "lineCount": 16
+        },
+        {
+          "name": "ToastItem",
+          "params": [
+            "{\n  toast,\n  onDismiss,\n}"
+          ],
+          "exported": false,
+          "lineCount": 34
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useEffect"
+          ]
+        },
+        {
+          "source": "zustand",
+          "specifiers": [
+            "create"
+          ]
+        },
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "CheckCircle2",
+            "AlertCircle",
+            "Info",
+            "X"
+          ]
+        },
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        }
+      ],
+      "exports": [
+        "useToastStore",
+        "toast",
+        "ToastViewport"
+      ],
+      "totalLines": 112,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/components/ui/Toggle.tsx": {
+      "filePath": "web/app/components/ui/Toggle.tsx",
+      "contentHash": "b4e3a1510d4bbf6317259028a029e9993ca40d44ed0fae7ea46f8441dfcc8f7c",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "forwardRef"
+          ]
+        },
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        }
+      ],
+      "exports": [
+        "Toggle"
+      ],
+      "totalLines": 65,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/error.tsx": {
+      "filePath": "web/app/error.tsx",
+      "contentHash": "35aa35b24f8229e2d4abe8d6949dcadab56219512bbe240319f114d02bfb8e03",
+      "functions": [
+        {
+          "name": "Error",
+          "params": [
+            "{\n  error,\n  reset,\n}"
+          ],
+          "exported": true,
+          "lineCount": 37
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useEffect"
+          ]
+        },
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "AlertTriangle"
+          ]
+        }
+      ],
+      "exports": [
+        "Error"
+      ],
+      "totalLines": 45,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/globals.css": {
+      "filePath": "web/app/globals.css",
+      "contentHash": "c8fad71e1f7d67a04aa2e0cc02edb5e21a0697d509ade5bf95b4d6acfc33a394",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 139,
+      "hasStructuralAnalysis": false
+    },
+    "web/app/layout.tsx": {
+      "filePath": "web/app/layout.tsx",
+      "contentHash": "4ff44c33cafad52a5ca82bc46c733fb3551d032baa91f8effca61042ef85bc78",
+      "functions": [
+        {
+          "name": "RootLayout",
+          "params": [
+            "{\n  children,\n}"
+          ],
+          "exported": true,
+          "lineCount": 22
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next",
+          "specifiers": [
+            "Metadata",
+            "Viewport"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/Toast",
+          "specifiers": [
+            "ToastViewport"
+          ]
+        },
+        {
+          "source": "@/app/components/layout/Sidebar",
+          "specifiers": [
+            "Sidebar"
+          ]
+        },
+        {
+          "source": "./globals.css",
+          "specifiers": []
+        }
+      ],
+      "exports": [
+        "metadata",
+        "viewport",
+        "RootLayout"
+      ],
+      "totalLines": 44,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/leads/page.tsx": {
+      "filePath": "web/app/leads/page.tsx",
+      "contentHash": "6b4e5e122c8d37933122fbb3c434bd4c6992c55ea953b6c6c6479ebbc022510c",
+      "functions": [
+        {
+          "name": "fmtBudget",
+          "params": [
+            "n"
+          ],
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "fmtTz",
+          "params": [
+            "h"
+          ],
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "excerpt",
+          "params": [
+            "s",
+            "n"
+          ],
+          "exported": false,
+          "lineCount": 3
+        },
+        {
+          "name": "CountTile",
+          "params": [
+            "{ label, value, tone }"
+          ],
+          "exported": false,
+          "lineCount": 15
+        },
+        {
+          "name": "ManualEntryCard",
+          "params": [
+            "{ onSubmitted }"
+          ],
+          "exported": false,
+          "lineCount": 104
+        },
+        {
+          "name": "LeadRow",
+          "params": [
+            "{ lead, onUpdated }"
+          ],
+          "exported": false,
+          "lineCount": 139
+        },
+        {
+          "name": "LeadsPage",
+          "params": [],
+          "exported": true,
+          "lineCount": 159
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useCallback",
+            "useEffect",
+            "useMemo",
+            "useState"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/Card",
+          "specifiers": [
+            "Card",
+            "CardHeader"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/Button",
+          "specifiers": [
+            "Button"
+          ]
+        },
+        {
+          "source": "@/lib/utils/cn",
+          "specifiers": [
+            "cn"
+          ]
+        }
+      ],
+      "exports": [
+        "LeadsPage"
+      ],
+      "totalLines": 551,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/loading.tsx": {
+      "filePath": "web/app/loading.tsx",
+      "contentHash": "4ff5a2037100890d17b0aaab100d34f59b08822bbe3e1f260c20dea5e3940068",
+      "functions": [
+        {
+          "name": "Loading",
+          "params": [],
+          "exported": true,
+          "lineCount": 12
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "Loader2"
+          ]
+        }
+      ],
+      "exports": [
+        "Loading"
+      ],
+      "totalLines": 18,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/page.tsx": {
+      "filePath": "web/app/page.tsx",
+      "contentHash": "4f2f5601e6a503ef79a252cf76c95335d090479b8c5bf46307e1c1f0ab42c83a",
+      "functions": [
+        {
+          "name": "DashboardPage",
+          "params": [],
+          "exported": true,
+          "lineCount": 143
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useEffect",
+            "useState"
+          ]
+        },
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "LayoutDashboard"
+          ]
+        },
+        {
+          "source": "@/app/components/jobs/JobTable",
+          "specifiers": [
+            "JobTable"
+          ]
+        },
+        {
+          "source": "@/app/components/jobs/JobTableFilters",
+          "specifiers": [
+            "JobTableFilters"
+          ]
+        },
+        {
+          "source": "@/app/components/jobs/JobTableSkeleton",
+          "specifiers": [
+            "JobTableSkeleton"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/Spinner",
+          "specifiers": [
+            "Spinner"
+          ]
+        },
+        {
+          "source": "@/lib/store/jobs",
+          "specifiers": [
+            "useJobsStore"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/Toast",
+          "specifiers": [
+            "toast"
+          ]
+        },
+        {
+          "source": "@/lib/types/job",
+          "specifiers": [
+            "JobListResponse",
+            "JobFilterOptions"
+          ]
+        }
+      ],
+      "exports": [
+        "DashboardPage"
+      ],
+      "totalLines": 162,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/pipeline/page.tsx": {
+      "filePath": "web/app/pipeline/page.tsx",
+      "contentHash": "8b6f12c3890ee6dbe816fd3a18f90f7f79ff8854c8a0e86a2f822176a6aabbe6",
+      "functions": [
+        {
+          "name": "PipelinePage",
+          "params": [],
+          "exported": true,
+          "lineCount": 232
+        },
+        {
+          "name": "capitalize",
+          "params": [
+            "s"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useEffect",
+            "useRef",
+            "useState"
+          ]
+        },
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "Workflow",
+            "Play",
+            "Square",
+            "RotateCw",
+            "Shield",
+            "FileText"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/Button",
+          "specifiers": [
+            "Button"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/Card",
+          "specifiers": [
+            "Card",
+            "CardHeader"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/StatusBadge",
+          "specifiers": [
+            "StatusBadge"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/Spinner",
+          "specifiers": [
+            "Spinner"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/Toast",
+          "specifiers": [
+            "toast"
+          ]
+        },
+        {
+          "source": "@/app/api/pipeline/status/route",
+          "specifiers": [
+            "PipelineStatus"
+          ]
+        }
+      ],
+      "exports": [
+        "PipelinePage"
+      ],
+      "totalLines": 252,
+      "hasStructuralAnalysis": true
+    },
+    "web/app/settings/page.tsx": {
+      "filePath": "web/app/settings/page.tsx",
+      "contentHash": "abed1cbecf72fc616faf25fa1184212d7661394d9b67bc22c29ff3a009d29047",
+      "functions": [
+        {
+          "name": "isValidClockTime",
+          "params": [
+            "value"
+          ],
+          "returnType": "boolean",
+          "exported": false,
+          "lineCount": 9
+        },
+        {
+          "name": "SettingsPage",
+          "params": [],
+          "exported": true,
+          "lineCount": 162
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "react",
+          "specifiers": [
+            "useEffect",
+            "useState"
+          ]
+        },
+        {
+          "source": "lucide-react",
+          "specifiers": [
+            "SettingsIcon",
+            "Save"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/Card",
+          "specifiers": [
+            "Card"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/Button",
+          "specifiers": [
+            "Button"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/Slider",
+          "specifiers": [
+            "Slider"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/NumberInput",
+          "specifiers": [
+            "NumberInput"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/Spinner",
+          "specifiers": [
+            "Spinner"
+          ]
+        },
+        {
+          "source": "@/app/components/ui/Toast",
+          "specifiers": [
+            "toast"
+          ]
+        }
+      ],
+      "exports": [
+        "SettingsPage"
+      ],
+      "totalLines": 195,
+      "hasStructuralAnalysis": true
+    },
+    "web/lib/api/guards.ts": {
+      "filePath": "web/lib/api/guards.ts",
+      "contentHash": "4a5beead3d0b99fa902a439909d8e7bf3a812074dc76b3e17fedb9eb1386798f",
+      "functions": [
+        {
+          "name": "authorise",
+          "params": [
+            "request"
+          ],
+          "returnType": "AuthResult",
+          "exported": true,
+          "lineCount": 29
+        },
+        {
+          "name": "getClientIp",
+          "params": [
+            "request"
+          ],
+          "returnType": "string",
+          "exported": false,
+          "lineCount": 8
+        },
+        {
+          "name": "runSystemctl",
+          "params": [
+            "...args"
+          ],
+          "returnType": "Promise<{ ok: boolean; stdout: string; stderr: string; code: number | null }>",
+          "exported": true,
+          "lineCount": 21
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "next/server",
+          "specifiers": [
+            "NextRequest",
+            "NextResponse"
+          ]
+        }
+      ],
+      "exports": [
+        "authorise",
+        "runSystemctl"
+      ],
+      "totalLines": 90,
+      "hasStructuralAnalysis": true
+    },
+    "web/lib/api/settings-store.ts": {
+      "filePath": "web/lib/api/settings-store.ts",
+      "contentHash": "e24675d57b1963b98cb0c9a7c2551ea853d8010a2705058ecda1a163bb51ddd0",
+      "functions": [
+        {
+          "name": "readSettings",
+          "params": [],
+          "returnType": "Promise<AdvisorySettings>",
+          "exported": true,
+          "lineCount": 19
+        },
+        {
+          "name": "writeSettings",
+          "params": [
+            "input"
+          ],
+          "returnType": "Promise<{ ok: true; settings: AdvisorySettings } | { ok: false; error: string }>",
+          "exported": true,
+          "lineCount": 40
+        },
+        {
+          "name": "isObject",
+          "params": [
+            "value"
+          ],
+          "exported": false,
+          "lineCount": 3
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "server-only",
+          "specifiers": []
+        },
+        {
+          "source": "node:fs",
+          "specifiers": [
+            "fs"
+          ]
+        },
+        {
+          "source": "node:path",
+          "specifiers": [
+            "path"
+          ]
+        }
+      ],
+      "exports": [
+        "readSettings",
+        "writeSettings"
+      ],
+      "totalLines": 92,
+      "hasStructuralAnalysis": true
+    },
+    "web/lib/store/jobs.ts": {
+      "filePath": "web/lib/store/jobs.ts",
+      "contentHash": "9e60049bc69e514a7b9cd3da094175a5553b04c10edcc62a1973050b0bea0970",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "zustand",
+          "specifiers": [
+            "create"
+          ]
+        },
+        {
+          "source": "@/lib/types/job",
+          "specifiers": [
+            "Job",
+            "JobFilters",
+            "JobSortKey",
+            "SortDirection"
+          ]
+        }
+      ],
+      "exports": [
+        "useJobsStore"
+      ],
+      "totalLines": 74,
+      "hasStructuralAnalysis": true
+    },
+    "web/lib/supabase/server.ts": {
+      "filePath": "web/lib/supabase/server.ts",
+      "contentHash": "ec5e28751ef7e7661db96ed5cd66fb514e43a5d70f9b3970cc89816e083d5d06",
+      "functions": [
+        {
+          "name": "getSupabaseServer",
+          "params": [],
+          "returnType": "SupabaseClient",
+          "exported": true,
+          "lineCount": 22
+        },
+        {
+          "name": "isSupabaseConfigured",
+          "params": [],
+          "returnType": "boolean",
+          "exported": true,
+          "lineCount": 5
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "server-only",
+          "specifiers": []
+        },
+        {
+          "source": "@supabase/supabase-js",
+          "specifiers": [
+            "createClient",
+            "SupabaseClient"
+          ]
+        }
+      ],
+      "exports": [
+        "getSupabaseServer",
+        "isSupabaseConfigured"
+      ],
+      "totalLines": 48,
+      "hasStructuralAnalysis": true
+    },
+    "web/lib/types/job.ts": {
+      "filePath": "web/lib/types/job.ts",
+      "contentHash": "f3141f36deb368bd1828137e677370015290f84ab600ae6d9bb2a074de32f35e",
+      "functions": [
+        {
+          "name": "scoreBand",
+          "params": [
+            "score"
+          ],
+          "returnType": "ScoreBand",
+          "exported": true,
+          "lineCount": 6
+        }
+      ],
+      "classes": [],
+      "imports": [],
+      "exports": [
+        "scoreBand"
+      ],
+      "totalLines": 81,
+      "hasStructuralAnalysis": true
+    },
+    "web/lib/utils/cn.ts": {
+      "filePath": "web/lib/utils/cn.ts",
+      "contentHash": "82e9c0bf9b531b1abefe64856ea0e3d1c9a6b2c6e63865e49d706b25d9a075df",
+      "functions": [
+        {
+          "name": "cn",
+          "params": [
+            "...inputs"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 3
+        },
+        {
+          "name": "formatBritishDate",
+          "params": [
+            "iso"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 10
+        },
+        {
+          "name": "formatBritishDateTime",
+          "params": [
+            "iso"
+          ],
+          "returnType": "string",
+          "exported": true,
+          "lineCount": 13
+        }
+      ],
+      "classes": [],
+      "imports": [
+        {
+          "source": "clsx",
+          "specifiers": [
+            "clsx",
+            "ClassValue"
+          ]
+        },
+        {
+          "source": "tailwind-merge",
+          "specifiers": [
+            "twMerge"
+          ]
+        }
+      ],
+      "exports": [
+        "cn",
+        "formatBritishDate",
+        "formatBritishDateTime"
+      ],
+      "totalLines": 36,
+      "hasStructuralAnalysis": true
+    },
+    "web/next.config.mjs": {
+      "filePath": "web/next.config.mjs",
+      "contentHash": "b3b68e8440aff5fbf5601e0c8b2821eec359cbffc0574128c9b1e3a41393bea6",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 23,
+      "hasStructuralAnalysis": true
+    },
+    "web/package.json": {
+      "filePath": "web/package.json",
+      "contentHash": "fca0938254a22962640b3292d9fe78fc36be89e7a574f95f67f81c6c661ade96",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 40,
+      "hasStructuralAnalysis": true
+    },
+    "web/pnpm-workspace.yaml": {
+      "filePath": "web/pnpm-workspace.yaml",
+      "contentHash": "44fd1f2aefbb5fafbb86a23df9ce6092e0dd9a3db3654901b58e5d21de371136",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 3,
+      "hasStructuralAnalysis": true
+    },
+    "web/postcss.config.js": {
+      "filePath": "web/postcss.config.js",
+      "contentHash": "0acff79ae0b854cba17dd5cd365daa344c794bdcac8f67676ad748b6d5c8b7bd",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 8,
+      "hasStructuralAnalysis": true
+    },
+    "web/README.md": {
+      "filePath": "web/README.md",
+      "contentHash": "371f42f41e8bc3d80e941a164795e3a34a66ff433457b20df547272255e1cd58",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 159,
+      "hasStructuralAnalysis": true
+    },
+    "web/tailwind.config.ts": {
+      "filePath": "web/tailwind.config.ts",
+      "contentHash": "50f1b60e456929a625354426ef71ec645b934911a9a24a475108f34ab4a634d1",
+      "functions": [],
+      "classes": [],
+      "imports": [
+        {
+          "source": "tailwindcss",
+          "specifiers": [
+            "Config"
+          ]
+        }
+      ],
+      "exports": [],
+      "totalLines": 96,
+      "hasStructuralAnalysis": true
+    },
+    "web/tsconfig.json": {
+      "filePath": "web/tsconfig.json",
+      "contentHash": "d37dbf60d5add24aafb404c6c9d1294dc0c0c9cd3d7d172ff91e2f720010a7f0",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 30,
+      "hasStructuralAnalysis": true
+    },
+    "web/tsconfig.tsbuildinfo": {
+      "filePath": "web/tsconfig.tsbuildinfo",
+      "contentHash": "ca207682fcb868d3405904883639848c1ec6f279a5c2dd4bc58165cbdf4268cc",
+      "functions": [],
+      "classes": [],
+      "imports": [],
+      "exports": [],
+      "totalLines": 1,
+      "hasStructuralAnalysis": false
+    }
+  }
+}

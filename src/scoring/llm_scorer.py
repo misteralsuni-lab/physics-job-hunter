@@ -582,7 +582,9 @@ class LLMScorer:
 
     GROQ_MODELS: list[str] = []
     NVIDIA_MODELS: list[str] = []
-    OPENCODE_MODELS: list[str] = ["deepseek-v4-flash-free"]
+    # Primary: hy3-free (OpenCode Zen). deepseek-v4-flash-free is the fallback
+    # if hy3-free is unavailable / errors (2026-07-12).
+    OPENCODE_MODELS: list[str] = ["hy3-free", "deepseek-v4-flash-free"]
 
     # ------------------------------------------------------------------
     #  _call_base — shared HTTP POST to any OpenAI-compatible endpoint
@@ -896,7 +898,8 @@ class LLMScorer:
     def _batch_score_via_opencode_zen(self, prompt: str, expected: int) -> list[dict] | None:
         """Batch scoring via OpenCode Zen (single call, multi-job response).
 
-        Uses the first model in OPENCODE_MODELS (deepseek-v4-flash-free).
+        Uses the first model in OPENCODE_MODELS (hy3-free, with
+        deepseek-v4-flash-free as fallback) — see _try_models rotation.
         Reasoning-mode headroom: max_tokens=4096 so the model can finish
         its reasoning_content chain-of-thought and emit the visible JSON
         array answer (same fix as the single-score path, 2026-06-28).
@@ -904,25 +907,45 @@ class LLMScorer:
         because reasoning-mode models benefit from a slightly warmer
         setting to avoid the chain-of-thought collapsing onto itself.
         """
+        last_err: Exception | None = None
+        for model in self.OPENCODE_MODELS:
+            try:
+                resp = httpx.post(
+                    "https://opencode.ai/zen/v1/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {settings.opencode_zen_api_key}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": model,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "temperature": 0.3,
+                        "max_tokens": 4096,
+                    },
+                    timeout=120,
+                )
+                if resp.status_code in (401, 404):
+                    log.warning("[CONFIG_INVALID] OpenCode Zen batch model %r rejected (HTTP %s) — trying next",
+                                model, resp.status_code)
+                    last_err = RuntimeError(f"HTTP {resp.status_code}")
+                    continue
+                resp.raise_for_status()
+                break
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code in (429, 500, 502, 503):
+                    raise  # retryable — tenacity handles
+                log.warning("OpenCode Zen batch model %r failed: %s — trying next", model, e)
+                last_err = e
+                continue
+            except Exception as e:
+                log.debug("OpenCode Zen batch model %r failed: %s", model, e)
+                last_err = e
+                continue
+        else:
+            log.warning("OpenCode Zen batch: all models failed (last: %s)", last_err)
+            return None
+
         try:
-            resp = httpx.post(
-                "https://opencode.ai/zen/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {settings.opencode_zen_api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": self.OPENCODE_MODELS[0],
-                    "messages": [{"role": "user", "content": prompt}],
-                    "temperature": 0.3,
-                    "max_tokens": 4096,
-                },
-                timeout=120,
-            )
-            if resp.status_code in (401, 404):
-                log.warning("[CONFIG_INVALID] OpenCode Zen batch rejected (HTTP %s)", resp.status_code)
-                return None
-            resp.raise_for_status()
             content = resp.json()["choices"][0]["message"]["content"]
             json_str = self._extract_json_array(content)
             if json_str is None:

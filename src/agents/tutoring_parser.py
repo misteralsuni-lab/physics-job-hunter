@@ -216,6 +216,39 @@ def _call_openrouter(prompt: str, model: str) -> str | None:
         return None
 
 
+def _call_opencode_zen(prompt: str, model: str = "hy3-free") -> str | None:
+    """OpenCode Zen single-shot parser call.
+
+    Primary model ``hy3-free`` (2026-07-12); falls back to
+    ``deepseek-v4-flash-free`` if it errors. Reasoning headroom:
+    max_tokens=4096 so reasoning-mode models finish and emit content.
+    """
+    if not settings.opencode_zen_api_key:
+        return None
+    for m in ("hy3-free", "deepseek-v4-flash-free"):
+        try:
+            r = httpx.post(
+                "https://opencode.ai/zen/v1/chat/completions",
+                headers={"Authorization": f"Bearer {settings.opencode_zen_api_key}"},
+                json={
+                    "model": m,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.2,
+                    "max_tokens": 4096,
+                },
+                timeout=settings.tutoring_parse_timeout_s,
+            )
+            if r.status_code in (401, 404):
+                log.warning("opencode_zen model %s rejected (HTTP %s) — trying fallback", m, r.status_code)
+                continue
+            r.raise_for_status()
+            return r.json()["choices"][0]["message"]["content"]
+        except Exception as e:
+            log.warning("opencode_zen model %s failed: %s", m, e)
+            continue
+    return None
+
+
 def _call_gemini(prompt: str, model: str = "gemini-2.5-flash") -> str | None:
     if not settings.gemini_api_key:
         return None
@@ -244,7 +277,7 @@ def _provider_call(prompt: str) -> str | None:
     candidates: list[tuple[str, Callable[[str], str | None]]] = []
 
     if settings.opencode_zen_api_key:
-        candidates.append(("opencode_zen:deepseek-v4-flash-free",
+        candidates.append(("opencode_zen:hy3-free",
                            _call_opencode_zen))
     if settings.nvidia_api_key and settings.nvidia_backup_model:
         candidates.append((f"nvidia:{settings.nvidia_backup_model}",

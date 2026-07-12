@@ -1,0 +1,1040 @@
+{
+  "name": "physics-job-hunter",
+  "description": "Automated job search pipeline for international Physics teaching roles",
+  "languages": [
+    "css",
+    "javascript",
+    "json",
+    "markdown",
+    "python",
+    "shell",
+    "sql",
+    "toml",
+    "txt",
+    "typescript",
+    "yaml"
+  ],
+  "frameworks": [
+    "Playwright",
+    "Supabase",
+    "Pydantic",
+    "APScheduler",
+    "Next.js",
+    "React",
+    "Tailwind CSS"
+  ],
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "language": "markdown",
+      "sizeLines": 248,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/INTERVIEW_Q_and_A.md",
+      "language": "markdown",
+      "sizeLines": 86,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "data/profile_tutoring.json",
+      "language": "json",
+      "sizeLines": 23,
+      "fileCategory": "config"
+    },
+    {
+      "path": "data/profile.json",
+      "language": "json",
+      "sizeLines": 10,
+      "fileCategory": "config"
+    },
+    {
+      "path": "docs/dual-pathway.md",
+      "language": "markdown",
+      "sizeLines": 265,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "grilling.md",
+      "language": "markdown",
+      "sizeLines": 7,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "nul",
+      "language": "unknown",
+      "sizeLines": 37,
+      "fileCategory": "code"
+    },
+    {
+      "path": "package.json",
+      "language": "json",
+      "sizeLines": 5,
+      "fileCategory": "config"
+    },
+    {
+      "path": "pyproject.toml",
+      "language": "toml",
+      "sizeLines": 21,
+      "fileCategory": "config"
+    },
+    {
+      "path": "readme.md",
+      "language": "markdown",
+      "sizeLines": 37,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "requirements.txt",
+      "language": "txt",
+      "sizeLines": 34,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "scripts/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/migrate_tutoring_leads.py",
+      "language": "python",
+      "sizeLines": 144,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/run_scheduler.py",
+      "language": "python",
+      "sizeLines": 4,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/run_scheduler.sh",
+      "language": "shell",
+      "sizeLines": 3,
+      "fileCategory": "script"
+    },
+    {
+      "path": "scripts/run_telegram_bot.py",
+      "language": "python",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "scripts/run_telegram_bot.sh",
+      "language": "shell",
+      "sizeLines": 3,
+      "fileCategory": "script"
+    },
+    {
+      "path": "scripts/setup_supabase.sql",
+      "language": "sql",
+      "sizeLines": 25,
+      "fileCategory": "data"
+    },
+    {
+      "path": "scripts/setup_tutoring_leads_core.sql",
+      "language": "sql",
+      "sizeLines": 84,
+      "fileCategory": "data"
+    },
+    {
+      "path": "scripts/setup_tutoring_leads.sql",
+      "language": "sql",
+      "sizeLines": 103,
+      "fileCategory": "data"
+    },
+    {
+      "path": "src/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/agents/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/agents/models.py",
+      "language": "python",
+      "sizeLines": 137,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/agents/research_agent.py",
+      "language": "python",
+      "sizeLines": 488,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/agents/tools.py",
+      "language": "python",
+      "sizeLines": 180,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/agents/tutoring_parser.py",
+      "language": "python",
+      "sizeLines": 322,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/config.py",
+      "language": "python",
+      "sizeLines": 68,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/extractors/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/generators/__init__.py",
+      "language": "python",
+      "sizeLines": 3,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/generators/tutoring_proposal.py",
+      "language": "python",
+      "sizeLines": 286,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/main.py",
+      "language": "python",
+      "sizeLines": 293,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/notify/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/notify/email_sender.py",
+      "language": "python",
+      "sizeLines": 101,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/notify/telegram_inbound.py",
+      "language": "python",
+      "sizeLines": 399,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/notify/telegram.py",
+      "language": "python",
+      "sizeLines": 162,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scheduler/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scheduler/daily_run.py",
+      "language": "python",
+      "sizeLines": 61,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scheduler/tutoring_run.py",
+      "language": "python",
+      "sizeLines": 158,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scoring/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scoring/llm_scorer.py",
+      "language": "python",
+      "sizeLines": 987,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scoring/tutoring_scorer.py",
+      "language": "python",
+      "sizeLines": 340,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scrapers/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scrapers/base.py",
+      "language": "python",
+      "sizeLines": 69,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scrapers/basis.py",
+      "language": "python",
+      "sizeLines": 92,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scrapers/browser_base.py",
+      "language": "python",
+      "sizeLines": 260,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scrapers/dipont.py",
+      "language": "python",
+      "sizeLines": 86,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scrapers/gulftalent.py",
+      "language": "python",
+      "sizeLines": 257,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scrapers/libyan_jobs.py",
+      "language": "python",
+      "sizeLines": 70,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scrapers/linkedin.py",
+      "language": "python",
+      "sizeLines": 156,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scrapers/schrole.py",
+      "language": "python",
+      "sizeLines": 14,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scrapers/search_associates.py",
+      "language": "python",
+      "sizeLines": 269,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scrapers/teacher_horizons.py",
+      "language": "python",
+      "sizeLines": 299,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scrapers/tes.py",
+      "language": "python",
+      "sizeLines": 139,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/scrapers/toptutorjob.py",
+      "language": "python",
+      "sizeLines": 214,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/storage/__init__.py",
+      "language": "python",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/storage/dedup_store.py",
+      "language": "python",
+      "sizeLines": 95,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/storage/supabase_client.py",
+      "language": "python",
+      "sizeLines": 133,
+      "fileCategory": "code"
+    },
+    {
+      "path": "src/storage/tutoring_leads.py",
+      "language": "python",
+      "sizeLines": 164,
+      "fileCategory": "code"
+    },
+    {
+      "path": "stealth_browser.py",
+      "language": "python",
+      "sizeLines": 122,
+      "fileCategory": "code"
+    },
+    {
+      "path": "test_camoufox.py",
+      "language": "python",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests/test_gemini_smoke.py",
+      "language": "python",
+      "sizeLines": 83,
+      "fileCategory": "code"
+    },
+    {
+      "path": "tests/test_tutoring_smoke.py",
+      "language": "python",
+      "sizeLines": 238,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/.pnpm-approve-builds.json",
+      "language": "json",
+      "sizeLines": 1,
+      "fileCategory": "config"
+    },
+    {
+      "path": "web/app/api/jobs/options/route.ts",
+      "language": "typescript",
+      "sizeLines": 57,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/api/jobs/route.ts",
+      "language": "typescript",
+      "sizeLines": 165,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/api/leads/[id]/status/route.ts",
+      "language": "typescript",
+      "sizeLines": 107,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/api/leads/counts/route.ts",
+      "language": "typescript",
+      "sizeLines": 50,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/api/leads/manual/route.ts",
+      "language": "typescript",
+      "sizeLines": 62,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/api/leads/route.ts",
+      "language": "typescript",
+      "sizeLines": 59,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/api/pipeline/logs/route.ts",
+      "language": "typescript",
+      "sizeLines": 41,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/api/pipeline/run/route.ts",
+      "language": "typescript",
+      "sizeLines": 50,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/api/pipeline/start/route.ts",
+      "language": "typescript",
+      "sizeLines": 20,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/api/pipeline/status/route.ts",
+      "language": "typescript",
+      "sizeLines": 69,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/api/pipeline/stop/route.ts",
+      "language": "typescript",
+      "sizeLines": 20,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/api/settings/route.ts",
+      "language": "typescript",
+      "sizeLines": 40,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/jobs/Chips.tsx",
+      "language": "typescript",
+      "sizeLines": 27,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/jobs/JobDetailDrawer.tsx",
+      "language": "typescript",
+      "sizeLines": 155,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/jobs/JobTable.tsx",
+      "language": "typescript",
+      "sizeLines": 225,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/jobs/JobTableFilters.tsx",
+      "language": "typescript",
+      "sizeLines": 178,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/jobs/JobTableSkeleton.tsx",
+      "language": "typescript",
+      "sizeLines": 34,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/jobs/Pagination.tsx",
+      "language": "typescript",
+      "sizeLines": 100,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/jobs/ScoreBadge.tsx",
+      "language": "typescript",
+      "sizeLines": 33,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/layout/Sidebar.tsx",
+      "language": "typescript",
+      "sizeLines": 98,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/ui/Button.tsx",
+      "language": "typescript",
+      "sizeLines": 76,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/ui/Card.tsx",
+      "language": "typescript",
+      "sizeLines": 55,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/ui/EmptyState.tsx",
+      "language": "typescript",
+      "sizeLines": 41,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/ui/NumberInput.tsx",
+      "language": "typescript",
+      "sizeLines": 87,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/ui/Skeleton.tsx",
+      "language": "typescript",
+      "sizeLines": 12,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/ui/Slider.tsx",
+      "language": "typescript",
+      "sizeLines": 69,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/ui/Spinner.tsx",
+      "language": "typescript",
+      "sizeLines": 32,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/ui/StatusBadge.tsx",
+      "language": "typescript",
+      "sizeLines": 65,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/ui/Toast.tsx",
+      "language": "typescript",
+      "sizeLines": 111,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/components/ui/Toggle.tsx",
+      "language": "typescript",
+      "sizeLines": 64,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/error.tsx",
+      "language": "typescript",
+      "sizeLines": 44,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/globals.css",
+      "language": "css",
+      "sizeLines": 138,
+      "fileCategory": "markup"
+    },
+    {
+      "path": "web/app/layout.tsx",
+      "language": "typescript",
+      "sizeLines": 43,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/leads/page.tsx",
+      "language": "typescript",
+      "sizeLines": 550,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/loading.tsx",
+      "language": "typescript",
+      "sizeLines": 17,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/page.tsx",
+      "language": "typescript",
+      "sizeLines": 161,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/pipeline/page.tsx",
+      "language": "typescript",
+      "sizeLines": 251,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/app/settings/page.tsx",
+      "language": "typescript",
+      "sizeLines": 194,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/lib/api/guards.ts",
+      "language": "typescript",
+      "sizeLines": 89,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/lib/api/settings-store.ts",
+      "language": "typescript",
+      "sizeLines": 91,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/lib/store/jobs.ts",
+      "language": "typescript",
+      "sizeLines": 73,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/lib/supabase/server.ts",
+      "language": "typescript",
+      "sizeLines": 47,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/lib/types/job.ts",
+      "language": "typescript",
+      "sizeLines": 80,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/lib/utils/cn.ts",
+      "language": "typescript",
+      "sizeLines": 35,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/next.config.mjs",
+      "language": "javascript",
+      "sizeLines": 22,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/package.json",
+      "language": "json",
+      "sizeLines": 39,
+      "fileCategory": "config"
+    },
+    {
+      "path": "web/pnpm-workspace.yaml",
+      "language": "yaml",
+      "sizeLines": 2,
+      "fileCategory": "config"
+    },
+    {
+      "path": "web/postcss.config.js",
+      "language": "javascript",
+      "sizeLines": 7,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/README.md",
+      "language": "markdown",
+      "sizeLines": 158,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "web/tailwind.config.ts",
+      "language": "typescript",
+      "sizeLines": 95,
+      "fileCategory": "code"
+    },
+    {
+      "path": "web/tsconfig.json",
+      "language": "json",
+      "sizeLines": 29,
+      "fileCategory": "config"
+    },
+    {
+      "path": "web/tsconfig.tsbuildinfo",
+      "language": "tsbuildinfo",
+      "sizeLines": 0,
+      "fileCategory": "code"
+    }
+  ],
+  "totalFiles": 115,
+  "filteredByIgnore": 0,
+  "estimatedComplexity": "moderate",
+  "importMap": {
+    "AGENTS.md": [],
+    "data/INTERVIEW_Q_and_A.md": [],
+    "data/profile_tutoring.json": [],
+    "data/profile.json": [],
+    "docs/dual-pathway.md": [],
+    "grilling.md": [],
+    "nul": [],
+    "package.json": [],
+    "pyproject.toml": [],
+    "readme.md": [],
+    "requirements.txt": [],
+    "scripts/__init__.py": [],
+    "scripts/migrate_tutoring_leads.py": [],
+    "scripts/run_scheduler.py": [
+      "src/scheduler/daily_run.py"
+    ],
+    "scripts/run_scheduler.sh": [],
+    "scripts/run_telegram_bot.py": [
+      "src/notify/telegram_inbound.py"
+    ],
+    "scripts/run_telegram_bot.sh": [],
+    "scripts/setup_supabase.sql": [],
+    "scripts/setup_tutoring_leads_core.sql": [],
+    "scripts/setup_tutoring_leads.sql": [],
+    "src/__init__.py": [],
+    "src/agents/__init__.py": [],
+    "src/agents/models.py": [],
+    "src/agents/research_agent.py": [
+      "src/agents/models.py",
+      "src/agents/tools.py",
+      "src/config.py"
+    ],
+    "src/agents/tools.py": [
+      "src/config.py"
+    ],
+    "src/agents/tutoring_parser.py": [
+      "src/agents/models.py",
+      "src/config.py"
+    ],
+    "src/config.py": [],
+    "src/extractors/__init__.py": [],
+    "src/generators/__init__.py": [],
+    "src/generators/tutoring_proposal.py": [
+      "src/agents/models.py",
+      "src/scoring/tutoring_scorer.py"
+    ],
+    "src/main.py": [
+      "src/agents/models.py",
+      "src/agents/research_agent.py",
+      "src/config.py",
+      "src/notify/email_sender.py",
+      "src/notify/telegram.py",
+      "src/scoring/llm_scorer.py",
+      "src/scrapers/basis.py",
+      "src/scrapers/dipont.py",
+      "src/scrapers/gulftalent.py",
+      "src/scrapers/libyan_jobs.py",
+      "src/scrapers/linkedin.py",
+      "src/scrapers/schrole.py",
+      "src/scrapers/search_associates.py",
+      "src/scrapers/teacher_horizons.py",
+      "src/scrapers/tes.py",
+      "src/scrapers/toptutorjob.py",
+      "src/storage/supabase_client.py"
+    ],
+    "src/notify/__init__.py": [],
+    "src/notify/email_sender.py": [
+      "src/config.py"
+    ],
+    "src/notify/telegram_inbound.py": [
+      "src/config.py",
+      "src/storage/tutoring_leads.py"
+    ],
+    "src/notify/telegram.py": [
+      "src/config.py"
+    ],
+    "src/scheduler/__init__.py": [],
+    "src/scheduler/daily_run.py": [
+      "src/config.py",
+      "src/main.py",
+      "src/scheduler/tutoring_run.py"
+    ],
+    "src/scheduler/tutoring_run.py": [
+      "src/agents/tutoring_parser.py",
+      "src/config.py",
+      "src/generators/tutoring_proposal.py",
+      "src/scoring/tutoring_scorer.py",
+      "src/storage/tutoring_leads.py"
+    ],
+    "src/scoring/__init__.py": [],
+    "src/scoring/llm_scorer.py": [
+      "src/config.py"
+    ],
+    "src/scoring/tutoring_scorer.py": [
+      "src/config.py"
+    ],
+    "src/scrapers/__init__.py": [],
+    "src/scrapers/base.py": [],
+    "src/scrapers/basis.py": [
+      "src/scrapers/base.py"
+    ],
+    "src/scrapers/browser_base.py": [
+      "src/scrapers/base.py"
+    ],
+    "src/scrapers/dipont.py": [
+      "src/scrapers/base.py"
+    ],
+    "src/scrapers/gulftalent.py": [
+      "src/scrapers/base.py"
+    ],
+    "src/scrapers/libyan_jobs.py": [
+      "src/scrapers/base.py"
+    ],
+    "src/scrapers/linkedin.py": [
+      "src/scrapers/base.py"
+    ],
+    "src/scrapers/schrole.py": [
+      "src/scrapers/base.py"
+    ],
+    "src/scrapers/search_associates.py": [
+      "src/config.py",
+      "src/scrapers/browser_base.py"
+    ],
+    "src/scrapers/teacher_horizons.py": [
+      "src/config.py",
+      "src/scrapers/browser_base.py"
+    ],
+    "src/scrapers/tes.py": [
+      "src/scrapers/base.py"
+    ],
+    "src/scrapers/toptutorjob.py": [
+      "src/scrapers/browser_base.py"
+    ],
+    "src/storage/__init__.py": [],
+    "src/storage/dedup_store.py": [],
+    "src/storage/supabase_client.py": [
+      "src/config.py",
+      "src/storage/dedup_store.py"
+    ],
+    "src/storage/tutoring_leads.py": [
+      "src/config.py"
+    ],
+    "stealth_browser.py": [],
+    "test_camoufox.py": [],
+    "tests/test_gemini_smoke.py": [
+      "src/scoring/llm_scorer.py"
+    ],
+    "tests/test_tutoring_smoke.py": [
+      "src/agents/models.py",
+      "src/agents/tutoring_parser.py",
+      "src/generators/__init__.py",
+      "src/generators/tutoring_proposal.py",
+      "src/scoring/tutoring_scorer.py"
+    ],
+    "web/.pnpm-approve-builds.json": [],
+    "web/app/api/jobs/options/route.ts": [
+      "web/lib/supabase/server.ts",
+      "web/lib/types/job.ts"
+    ],
+    "web/app/api/jobs/route.ts": [
+      "web/lib/supabase/server.ts",
+      "web/lib/types/job.ts"
+    ],
+    "web/app/api/leads/[id]/status/route.ts": [
+      "web/lib/api/guards.ts",
+      "web/lib/supabase/server.ts"
+    ],
+    "web/app/api/leads/counts/route.ts": [
+      "web/lib/supabase/server.ts"
+    ],
+    "web/app/api/leads/manual/route.ts": [
+      "web/lib/api/guards.ts",
+      "web/lib/supabase/server.ts"
+    ],
+    "web/app/api/leads/route.ts": [
+      "web/lib/supabase/server.ts"
+    ],
+    "web/app/api/pipeline/logs/route.ts": [],
+    "web/app/api/pipeline/run/route.ts": [
+      "web/lib/api/guards.ts"
+    ],
+    "web/app/api/pipeline/start/route.ts": [
+      "web/lib/api/guards.ts"
+    ],
+    "web/app/api/pipeline/status/route.ts": [
+      "web/app/components/ui/StatusBadge.tsx",
+      "web/lib/api/guards.ts"
+    ],
+    "web/app/api/pipeline/stop/route.ts": [
+      "web/lib/api/guards.ts"
+    ],
+    "web/app/api/settings/route.ts": [
+      "web/lib/api/guards.ts",
+      "web/lib/api/settings-store.ts"
+    ],
+    "web/app/components/jobs/Chips.tsx": [
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/components/jobs/JobDetailDrawer.tsx": [
+      "web/app/components/jobs/Chips.tsx",
+      "web/app/components/jobs/ScoreBadge.tsx",
+      "web/app/components/ui/Button.tsx",
+      "web/lib/types/job.ts",
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/components/jobs/JobTable.tsx": [
+      "web/app/components/jobs/Chips.tsx",
+      "web/app/components/jobs/JobTableSkeleton.tsx",
+      "web/app/components/jobs/Pagination.tsx",
+      "web/app/components/jobs/ScoreBadge.tsx",
+      "web/app/components/ui/EmptyState.tsx",
+      "web/lib/types/job.ts",
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/components/jobs/JobTableFilters.tsx": [
+      "web/app/components/ui/Button.tsx",
+      "web/app/components/ui/Toggle.tsx",
+      "web/lib/store/jobs.ts",
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/components/jobs/JobTableSkeleton.tsx": [
+      "web/app/components/ui/Skeleton.tsx"
+    ],
+    "web/app/components/jobs/Pagination.tsx": [
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/components/jobs/ScoreBadge.tsx": [
+      "web/lib/types/job.ts",
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/components/layout/Sidebar.tsx": [
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/components/ui/Button.tsx": [
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/components/ui/Card.tsx": [
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/components/ui/EmptyState.tsx": [
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/components/ui/NumberInput.tsx": [
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/components/ui/Skeleton.tsx": [
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/components/ui/Slider.tsx": [
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/components/ui/Spinner.tsx": [
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/components/ui/StatusBadge.tsx": [
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/components/ui/Toast.tsx": [
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/components/ui/Toggle.tsx": [
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/error.tsx": [],
+    "web/app/globals.css": [],
+    "web/app/layout.tsx": [
+      "web/app/components/layout/Sidebar.tsx",
+      "web/app/components/ui/Toast.tsx",
+      "web/app/globals.css"
+    ],
+    "web/app/leads/page.tsx": [
+      "web/app/components/ui/Button.tsx",
+      "web/app/components/ui/Card.tsx",
+      "web/lib/utils/cn.ts"
+    ],
+    "web/app/loading.tsx": [],
+    "web/app/page.tsx": [
+      "web/app/components/jobs/JobTable.tsx",
+      "web/app/components/jobs/JobTableFilters.tsx",
+      "web/app/components/jobs/JobTableSkeleton.tsx",
+      "web/app/components/ui/Spinner.tsx",
+      "web/app/components/ui/Toast.tsx",
+      "web/lib/store/jobs.ts",
+      "web/lib/types/job.ts"
+    ],
+    "web/app/pipeline/page.tsx": [
+      "web/app/api/pipeline/status/route.ts",
+      "web/app/components/ui/Button.tsx",
+      "web/app/components/ui/Card.tsx",
+      "web/app/components/ui/Spinner.tsx",
+      "web/app/components/ui/StatusBadge.tsx",
+      "web/app/components/ui/Toast.tsx"
+    ],
+    "web/app/settings/page.tsx": [
+      "web/app/components/ui/Button.tsx",
+      "web/app/components/ui/Card.tsx",
+      "web/app/components/ui/NumberInput.tsx",
+      "web/app/components/ui/Slider.tsx",
+      "web/app/components/ui/Spinner.tsx",
+      "web/app/components/ui/Toast.tsx"
+    ],
+    "web/lib/api/guards.ts": [],
+    "web/lib/api/settings-store.ts": [],
+    "web/lib/store/jobs.ts": [
+      "web/lib/types/job.ts"
+    ],
+    "web/lib/supabase/server.ts": [],
+    "web/lib/types/job.ts": [],
+    "web/lib/utils/cn.ts": [],
+    "web/next.config.mjs": [],
+    "web/package.json": [],
+    "web/pnpm-workspace.yaml": [],
+    "web/postcss.config.js": [],
+    "web/README.md": [],
+    "web/tailwind.config.ts": [],
+    "web/tsconfig.json": [],
+    "web/tsconfig.tsbuildinfo": []
+  }
+}
