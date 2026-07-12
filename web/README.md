@@ -139,7 +139,7 @@ web/
 - **Typography**: British English throughout (standardise, programme, labelling, colour, etc.).
 - **Touch targets**: Minimum 44×44 px via `.tap-target` utility and component internals.
 - **Accessibility**: Focus rings, ARIA labels/roles, keyboard navigation, `prefers-reduced-motion` respected.
-- **Dark mode**: Automatic via `prefers-color-scheme` media query.
+- **Dark mode**: Light / dark / system toggle (persisted to `localStorage`, applied pre-paint to avoid FOUC). Defaults to following the OS via `prefers-color-scheme`.
 
 ## Development Notes
 

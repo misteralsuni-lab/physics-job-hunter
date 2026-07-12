@@ -2,10 +2,13 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // NOTE: `output: "standalone"` would trim the production node_modules and
-  // lower runtime RSS, but it requires symlink creation (copyTracedFiles)
-  // which fails with EPERM on Windows without admin/Developer Mode.  Re-enable
-  // only on the Linux deploy target (the systemd host documented in AGENTS.md).
+  // `output: "standalone"` trims the production server bundle and lowers
+  // runtime RSS, which keeps `pnpm start` alive on the <2 Gi RAM systemd host
+  // (see AGENTS.md). It is safe here: the deploy target is Linux, where the
+  // symlink creation that previously failed with EPERM on Windows is not an
+  // issue. The lightweight static-preview path in AGENTS.md still works
+  // against the prerendered output.
+  output: "standalone",
 
   experimental: {
     // Tree-shake barrel-export libs at build time.  lucide-react ships

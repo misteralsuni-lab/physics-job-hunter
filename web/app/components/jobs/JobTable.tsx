@@ -69,7 +69,11 @@ export function JobTable({
 }: JobTableProps) {
   const [selected, setSelected] = useState<Job | null>(null);
 
-  if (loading) return <JobTableSkeleton />;
+  // Show the skeleton only for the initial load (no data yet). On a background
+  // refresh we keep the existing rows visible and let the page's spinner
+  // indicate activity — swapping to a skeleton mid-refresh would flicker the
+  // data the user is already reading.
+  if (loading && jobs.length === 0) return <JobTableSkeleton />;
 
   if (error) {
     return (

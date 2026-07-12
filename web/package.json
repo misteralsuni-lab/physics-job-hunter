@@ -5,8 +5,8 @@
   "description": "Reactive, touch-friendly front end for the Physics Job Hunter pipeline (Next.js App Router, TypeScript, Tailwind).",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "NODE_OPTIONS=--max-old-space-size=2048 next build",
+    "start": "NODE_OPTIONS=--max-old-space-size=1536 next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },

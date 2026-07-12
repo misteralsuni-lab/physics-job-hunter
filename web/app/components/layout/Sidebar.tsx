@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Workflow, Settings, Atom, Users } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { ThemeToggle, ThemeCycleButton } from "@/app/components/ui/ThemeToggle";
 
 interface NavItem {
   href: string;
@@ -59,8 +60,14 @@ export function Sidebar() {
             );
           })}
         </nav>
-        <div className="border-t border-line p-4 text-xs text-ink-faint">
-          <p>Reactive dashboard for the job-scraping pipeline.</p>
+        <div className="space-y-3 border-t border-line p-4">
+          <p className="text-xs text-ink-faint">
+            Reactive dashboard for the job-scraping pipeline.
+          </p>
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-xs font-medium text-ink-muted">Theme</span>
+            <ThemeToggle />
+          </div>
         </div>
       </aside>
 
@@ -92,6 +99,7 @@ export function Sidebar() {
             </Link>
           );
         })}
+        <ThemeCycleButton />
       </nav>
     </>
   );
