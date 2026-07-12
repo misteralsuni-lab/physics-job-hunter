@@ -20,6 +20,7 @@ from src.scoring.llm_scorer import LLMScorer
 from src.generators.cover_letter import CoverLetterGenerator
 from src.agents.research_agent import ResearchAgent
 from src.agents.models import StrategicBrief
+from src.campaign import load_campaign
 from src.notify.telegram import send_telegram_alert
 from src.notify.email_sender import send_email_digest
 
@@ -90,16 +91,19 @@ _NON_TEACHER_ROLES = frozenset({
 })
 
 
-def _is_relevant(job: dict) -> bool:
+def _is_relevant(job: dict, campaign: dict | None = None) -> bool:
     title = (job.get("title") or "").lower()
     subject_list = [s.lower() for s in (job.get("subject") or [])]
     curriculum_list = [c.lower() for c in (job.get("curriculum") or [])]
     combined = f"{title} {' '.join(subject_list)} {' '.join(curriculum_list)}"
 
     # FIRST: reject excluded exam boards (Cambridge, CIE, AQA, IB, etc.)
-    for phrase in _EXCLUDED_EXAM_BOARDS:
-        if phrase in combined:
-            return False
+    # In campaign mode the adjacent lane (Cambridge/IB) is intentionally
+    # allowed through the pre-filter, so this guard is skipped.
+    if campaign is None:
+        for phrase in _EXCLUDED_EXAM_BOARDS:
+            if phrase in combined:
+                return False
 
     # Reject out-of-scope roles (gender restrictions, wrong subject area).
     for phrase in _EXCLUSION_PHRASES:
@@ -122,9 +126,126 @@ def _is_relevant(job: dict) -> bool:
     return True
 
 
-def filter_relevant_jobs(jobs: list[dict]) -> list[dict]:
+def _campaign_text(job: dict) -> str:
+    return " ".join(str(job.get(k, "")) for k in
+                    ("title", "school", "country", "location", "description", "subject", "curriculum")).lower()
+
+
+def _derive_curriculum(text: str, precedence: list[str]) -> str:
+    found = []
+    if "edexcel" in text or "pearson" in text:
+        found.append("Edexcel")
+    if "cambridge" in text or " cie" in text or text.startswith("cie ") or "cie," in text:
+        found.append("Cambridge")
+    import re
+    if re.search(r"\bib\b", text) or "international baccalaureate" in text:
+        found.append("IB")
+    for cur in precedence:
+        if cur in found:
+            return cur
+    return "Other"
+
+
+def _derive_region(text: str, location_components: dict) -> str:
+    if "dresden" in text:
+        return "Dresden"
+    if "germany" in text or " berlin" in text or "leipzig" in text or "paderborn" in text or "munich" in text:
+        return "Germany"
+    if "czech" in text or "prague" in text:
+        return "Czechia"
+    if any(w in text for w in ("poland", "warsaw", "hungary", "budapest", "austria", "vienna", "slovakia", "bratislava")):
+        return "CentralEurope"
+    return "Other"
+
+
+def tag_campaign(job: dict, campaign: dict) -> dict | None:
+    """Tag a surviving job with campaign curriculum/region/lane/score.
+
+    Returns the mutated job, or None when the job falls in the disabled
+    curriculum_adjacent lane (so the caller can drop it).
+    """
+    text = _campaign_text(job)
+    precedence = campaign.get("curriculum_precedence", ["Edexcel", "Cambridge", "IB", "Other"])
+    curriculum = _derive_curriculum(text, precedence)
+    region = _derive_region(text, campaign["scoring"]["location"]["components"])
+    lane = "edexcel_only" if curriculum == "Edexcel" else "curriculum_adjacent"
+
+    if lane == "curriculum_adjacent" and not campaign.get("secondary_lane_enabled", False):
+        return None
+
+    cm = 0.0
+    comps = campaign["scoring"]["curriculum_match"]["components"]
+    # Subject credit is awarded on the SUBJECTS offered (physics/maths at
+    # A-Level / IGCSE), independent of the exam board. The board only decides
+    # whether the full (Edexcel) credit applies or the 0.6x adjacency boost
+    # (Cambridge / IB). This is what lets a Cambridge Physics+Maths school
+    # earn real curriculum_match credit instead of only the strong_stem point.
+    has_al = "a-level" in text or "a level" in text
+    has_ig = "igcse" in text
+    has_phys = "physics" in text
+    has_math = "maths" in text or "math" in text
+    if has_al:
+        if has_phys:
+            cm += comps.get("pearson_edexcel_a_level_physics", 0)
+        if has_math:
+            cm += comps.get("pearson_edexcel_a_level_maths", 0)
+    if has_ig:
+        if has_phys:
+            cm += comps.get("pearson_edexcel_igcse_physics", 0)
+        if has_math:
+            cm += comps.get("pearson_edexcel_igcse_maths", 0)
+    if has_phys or has_math or "science" in text or "stem" in text:
+        cm += comps.get("strong_stem", 0)
+    if lane == "curriculum_adjacent":
+        cm *= campaign.get("lane", {}).get("adjacency_boost", 0.6)
+
+    subject = 0
+    sm = campaign["scoring"]["subject_match"]
+    has_physics = "physics" in text
+    has_maths = "maths" in text or "math" in text
+    if has_physics and has_maths:
+        subject = sm.get("physics_and_maths", 0)
+    elif has_physics:
+        subject = sm.get("physics_vacancy", 0)
+    elif has_maths:
+        subject = sm.get("maths_vacancy", 0)
+
+    school = (job.get("school") or "").lower()
+    whitelist = {s["name"].lower(): s for s in campaign.get("target_schools", [])}
+    match = next((v for k, v in whitelist.items() if k and k in school), None)
+    if match:
+        visa = match.get("visa", 0)
+        career = match.get("career", 0)
+        competition = match.get("competition", 0)
+    else:
+        visa = campaign["scoring"]["visa"].get("unknown", 5)
+        career = 0
+        competition = 0
+
+    loc = campaign["scoring"]["location"]["components"].get(
+        {"Dresden": "dresden_region", "Germany": "germany", "Czechia": "czechia", "CentralEurope": "central_europe"}.get(region, ""), 0)
+
+    total = cm + subject + visa + loc + career + competition
+    total = int(min(100, round(total)))
+
+    tagged = dict(job)
+    tagged["curriculum"] = curriculum
+    tagged["region"] = region
+    tagged["lane"] = lane
+    tagged["campaign_score"] = total
+    return tagged
+
+
+def filter_relevant_jobs(jobs: list[dict], campaign: dict | None = None) -> list[dict]:
     before = len(jobs)
-    kept = [j for j in jobs if _is_relevant(j)]
+    kept = [j for j in jobs if _is_relevant(j, campaign)]
+    if campaign is not None:
+        tagged = []
+        for j in kept:
+            t = tag_campaign(j, campaign)
+            if t is not None:
+                tagged.append(t)
+        kept = tagged
     dropped = before - len(kept)
     if dropped:
         log.info("Heuristic pre-filter: dropped %d deviant job(s), keeping %d", dropped, len(kept))
@@ -200,23 +321,34 @@ def score_jobs_from_db(db: SupabaseClient, scorer: LLMScorer) -> int:
     return scored
 
 
-def send_notifications(jobs: list[dict], db: SupabaseClient | None = None) -> None:
+def send_notifications(jobs: list[dict], db: SupabaseClient | None = None, campaign: dict | None = None) -> None:
     top_jobs = [j for j in jobs if j.get("score", 0) >= settings.notify_score_threshold]
     if not top_jobs:
         log.info("No top-scoring jobs to notify")
         return
 
-    # Run strategic research for jobs scoring >= 80 ("acceptable" threshold)
-    research_candidates = [j for j in top_jobs if j.get("score", 0) >= settings.research_score_threshold]
+    # In campaign mode, only research jobs in lanes the campaign allows.
+    if campaign is not None:
+        secondary = campaign.get("secondary_lane_enabled", False)
+        research_candidates = [
+            j for j in top_jobs
+            if j.get("score", 0) >= settings.research_score_threshold
+            and (j.get("lane") == "edexcel_only"
+                 or (j.get("lane") == "curriculum_adjacent" and secondary))
+        ]
+    else:
+        research_candidates = [j for j in top_jobs if j.get("score", 0) >= settings.research_score_threshold]
+
     if research_candidates:
         log.info("Running strategic research for %d high-scoring job(s)...", len(research_candidates))
-        agent = ResearchAgent()
+        agent = ResearchAgent(campaign=campaign)
         for job in research_candidates:
             try:
                 brief = agent.research(
                     school_name=job.get("school", ""),
                     location=job.get("location", "") or job.get("city", "") or job.get("country", ""),
                     job_description=job.get("description", ""),
+                    campaign=campaign,
                 )
                 job["research_brief"] = brief.model_dump()
                 log.info("  ✓ Research brief produced for %s at %s", job.get("title", "?"), job.get("school", "?"))
@@ -230,7 +362,7 @@ def send_notifications(jobs: list[dict], db: SupabaseClient | None = None) -> No
     cover_letter_paths: dict[str, str] = {}
     for job in top_jobs:
         try:
-            path = generator.generate(job)
+            path = generator.generate(job, campaign=campaign)
             if path:
                 cover_letter_paths[job["url"]] = path
         except Exception as e:
@@ -252,8 +384,9 @@ def run_pipeline(force_notify: bool = False) -> dict:
     log.info("Physics Job Hunter — Pipeline Start")
     log.info("=" * 50)
 
+    campaign = load_campaign()
     jobs = run_scrapers()
-    jobs = filter_relevant_jobs(jobs)
+    jobs = filter_relevant_jobs(jobs, campaign)
     count = 0
     scored = 0
 
@@ -264,7 +397,7 @@ def run_pipeline(force_notify: bool = False) -> dict:
             log.info("Supabase unhealthy — DedupStore fallback for entire pipeline")
             raise httpx.HTTPError("health check failed")
 
-        scorer = LLMScorer()
+        scorer = LLMScorer(campaign=campaign)
 
         existing = db.get_seen_urls()
         new_jobs = [j for j in jobs if j["url"] not in existing]
@@ -282,12 +415,12 @@ def run_pipeline(force_notify: bool = False) -> dict:
             all_scored = db.client.table("job_listings").select("*").gte("score", settings.notify_score_threshold).execute().data
             if all_scored:
                 log.info("Force-notify: sending notifications for %d jobs", len(all_scored))
-                send_notifications(all_scored)
+                send_notifications(all_scored, db, campaign=campaign)
             else:
                 log.info("Force-notify: no jobs scored >= %d", settings.notify_score_threshold)
         else:
             db_jobs = db.get_scored_unnotified(min_score=settings.notify_score_threshold)
-            send_notifications(db_jobs, db)
+            send_notifications(db_jobs, db, campaign=campaign)
 
         db_available = True
 
@@ -296,10 +429,10 @@ def run_pipeline(force_notify: bool = False) -> dict:
 
     if not db_available and jobs:
         log.info("Falling back to in-memory scoring for %d jobs...", len(jobs))
-        scorer = LLMScorer()
+        scorer = LLMScorer(campaign=campaign)
         scored_jobs = score_jobs_in_memory(jobs, scorer)
         scored = len([j for j in scored_jobs if j.get("score") is not None])
-        send_notifications(scored_jobs)
+        send_notifications(scored_jobs, campaign=campaign)
 
     elapsed = (datetime.now() - start).total_seconds()
     log.info("Pipeline complete in %.1fs — %d new, %d scored", elapsed, count, scored)

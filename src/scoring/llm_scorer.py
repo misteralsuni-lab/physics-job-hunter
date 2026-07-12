@@ -80,11 +80,14 @@ EACH OBJECT SCHEMA:
 SCORING RUBRIC (additive, max 100):
 - Curriculum match: 0-35 | Subject match: 0-30 | Location: 0-25 | Housing: 0-10
 
-CRITICAL INSTRUCTIONS:
+  CRITICAL INSTRUCTIONS:
 - Output ONLY a raw JSON array: [{{...}}, {{...}}, ...]
 - No markdown, no code fences, no text outside the array.
 - No trailing commas. No extra fields. No commentary.
 - Array length MUST equal {n}."""
+
+
+CAMPAIGN_CONTEXT_BLOCK = """\n\nCAMPAIGN CONTEXT (override where relevant): This is the Pearson Edexcel Central Europe campaign. Prioritise Pearson Edexcel curriculum (full credit) and Central-European geography (Dresden > Germany > Czechia > other Central Europe). Treat verified Cambridge/IB Physics-Maths as curriculum-adjacent at 0.6x credit per the campaign rule set. Keep the total max 100."""
 
 
 # ---------------------------------------------------------------------------
@@ -221,8 +224,9 @@ def compress_job(job: dict[str, Any]) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 class LLMScorer:
-    def __init__(self):
+    def __init__(self, campaign: dict | None = None):
         self.profile = self._load_profile()
+        self.campaign = campaign
 
         # Populate model rotation lists from settings
         if settings.groq_model:
@@ -487,6 +491,8 @@ class LLMScorer:
             profile=json.dumps(self.profile, indent=2),
             job=json.dumps(compressed, indent=2),
         )
+        if self.campaign is not None:
+            prompt += CAMPAIGN_CONTEXT_BLOCK
 
         # Consult the registry so COOLING_DOWN / DEAD providers are skipped
         # instead of being retried on every job. record_success/record_failure
@@ -559,6 +565,8 @@ class LLMScorer:
             profile=json.dumps(self.profile, indent=2),
             serialized_jobs=serialized,
         )
+        if self.campaign is not None:
+            prompt += CAMPAIGN_CONTEXT_BLOCK
 
         for cfg in self._registry.active_providers(PROVIDER_WEIGHTS):
             if cfg.batch_fn is None:
@@ -974,6 +982,17 @@ class LLMScorer:
     # ------------------------------------------------------------------
 
     def _score_via_rules(self, job: dict) -> dict:
+        # Campaign-aware: if a deterministic campaign_score was already
+        # computed upstream, surface it so the rule fallback stays aligned
+        # with the campaign's 5-axis rubric instead of the generic profile.
+        if job.get("campaign_score") is not None:
+            return {
+                "score": int(job["campaign_score"]),
+                "reasoning": "campaign deterministic score",
+                "housing_allowance": job.get("housing_allowance"),
+                "curriculum_match": job.get("curriculum", "Other"),
+            }
+
         # Aligned with the LLM rubric (Curriculum 0-35, Subject 0-30,
         # Location 0-25, Housing 0-10) so that the ultimate fallback — only
         # reached when every provider is dead — ranks jobs on a comparable

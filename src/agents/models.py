@@ -106,6 +106,11 @@ class StrategicBrief(BaseModel):
         description="Directive for the cover letter opening hook.",
     )
 
+    school_profile: str = ""
+    recruitment_analysis: str = ""
+    candidate_match: str = ""
+    contact_strategy: str = ""
+
     @field_validator("institution_facts")
     @classmethod
     def _facts_must_be_non_empty(cls, v: list[str]) -> list[str]:
@@ -134,4 +139,8 @@ class StrategicBrief(BaseModel):
                 "to Mahmoud's hands-on IGCSE and A-Level classroom experience, then introduce "
                 "his engineering 'Applied Mastery' approach as the natural fit for the role."
             ),
+            school_profile="",
+            recruitment_analysis="",
+            candidate_match="",
+            contact_strategy="",
         )

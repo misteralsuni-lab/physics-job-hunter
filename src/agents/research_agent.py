@@ -37,6 +37,7 @@ class ResearchContext:
     location: str
     job_description: str
     profile: dict[str, Any]
+    campaign: dict | None = None
     observations: list[str] = field(default_factory=list)
 
     def add_observation(self, tool: str, input_args: dict, result: dict) -> None:
@@ -48,6 +49,16 @@ class ResearchContext:
 
     def to_prompt(self) -> str:
         obs = "\n\n---\n\n".join(self.observations) if self.observations else "No observations yet."
+        if self.campaign is not None:
+            directive = self.campaign.get("research_agent_prompt", "")
+            return AGENT_PROMPT_TEMPLATE_CAMPAIGN.format(
+                campaign_directive=directive,
+                school_name=self.school_name,
+                location=self.location,
+                job_description=self.job_description,
+                profile=json.dumps(self.profile, indent=2),
+                observations=obs,
+            )
         return AGENT_PROMPT_TEMPLATE.format(
             school_name=self.school_name,
             location=self.location,
@@ -131,6 +142,93 @@ Return ONLY a JSON object matching this schema:
   "institution_facts": ["2-3 highly specific, unique facts"],
   "strategic_alignment": "Short paragraph deciding which part of Mahmoud's expertise best matches the school's goals.",
   "recommended_angle": "Directive for the cover letter opening hook."
+}}
+
+If the observations are sparse, still produce the best brief you can without fabricating facts."""
+
+
+AGENT_PROMPT_TEMPLATE_CAMPAIGN = """You are a strategic research analyst for the Pearson Edexcel Central Europe campaign. Produce a PART-8 strategic brief with four analysis sections; do NOT write an outreach email.
+
+You must use British English spelling and terminology throughout.
+
+CAMPAIGN DIRECTIVE:
+{campaign_directive}
+
+CANDIDATE PROFILE (Mahmoud):
+{profile}
+
+JOB TO RESEARCH:
+- School name: {school_name}
+- Location: {location}
+- Role description: {job_description}
+
+AVAILABLE TOOLS:
+1. web_search(query): Search DuckDuckGo for the school's official website, recent news, campus branches, or curriculum pages.
+2. deep_scrape(url): Extract clean markdown from a webpage such as the school's "About Us", "Curriculum", "Headteacher's Welcome", or "Vacancies" pages.
+
+You may take up to 5 steps. At each step, return exactly one JSON object with this shape:
+
+For a tool call:
+{{
+  "action": "web_search" or "deep_scrape",
+  "reasoning": "Why you are choosing this tool and what you hope to learn",
+  "arguments": {{"query": "your search query"}} or {{"url": "https://..."}},
+  "brief": null
+}}
+
+For the final answer:
+{{
+  "action": "finalise",
+  "reasoning": "Why these facts and this angle were chosen",
+  "arguments": {{}},
+  "brief": {{
+    "institution_facts": ["2-3 highly specific, unique facts about the school"],
+    "strategic_alignment": "Short paragraph mapping Mahmoud's expertise to the school's goals.",
+    "recommended_angle": "Directive for the cover letter opening hook.",
+    "school_profile": "School Profile: curriculum, location and hiring context.",
+    "recruitment_analysis": "Recruitment Analysis: demand, visa/sponsorship posture, competition.",
+    "candidate_match": "Candidate Match: map Mahmoud's Edexcel Physics/Maths expertise; bridge Cambridge/IB via ~90% content-overlap where relevant.",
+    "contact_strategy": "Contact Strategy: recommended outreach channel and timing."
+  }}
+}}
+
+RULES:
+- You should normally perform at least one web_search and one deep_scrape before finalising, unless the tools return no usable data.
+- institution_facts must be 2-3 items, highly specific and unique to this institution. Avoid generic statements.
+- Do not fabricate facts; if data is limited, return the best brief you honestly can.
+- Always return a valid finalise action before the step limit, even if data is limited.
+
+OBSERVATIONS SO FAR:
+{observations}
+
+What is your next step? Return only the JSON object."""
+
+
+SYNTHESIS_PROMPT_CAMPAIGN = """You are a strategic research analyst for the Pearson Edexcel Central Europe campaign. Based on the observations gathered below, synthesise a final PART-8 strategic brief in the exact JSON schema.
+
+Use British English spelling and terminology.
+
+CAMPAIGN DIRECTIVE:
+{campaign_directive}
+
+CANDIDATE PROFILE:
+{profile}
+
+SCHOOL:
+{school_name}
+
+OBSERVATIONS:
+{observations}
+
+Return ONLY a JSON object matching this schema:
+{{
+  "institution_facts": ["2-3 highly specific, unique facts"],
+  "strategic_alignment": "Short paragraph mapping Mahmoud's expertise to the school's goals.",
+  "recommended_angle": "Directive for the cover letter opening hook.",
+  "school_profile": "School Profile: curriculum, location and hiring context.",
+  "recruitment_analysis": "Recruitment Analysis: demand, visa/sponsorship posture, competition.",
+  "candidate_match": "Candidate Match: map Mahmoud's Edexcel Physics/Maths expertise; bridge Cambridge/IB via ~90% content-overlap where relevant.",
+  "contact_strategy": "Contact Strategy: recommended outreach channel and timing."
 }}
 
 If the observations are sparse, still produce the best brief you can without fabricating facts."""
@@ -347,30 +445,34 @@ class ResearchAgent:
 
     MAX_STEPS = 5
 
-    def __init__(self) -> None:
+    def __init__(self, campaign: dict | None = None) -> None:
         self.profile = self._load_profile()
+        self.campaign = campaign
         self.llm = LLMClient()
 
     # --------------------------------------------------------------
     #  Public API
     # --------------------------------------------------------------
 
-    def research(self, school_name: str, location: str, job_description: str) -> StrategicBrief:
+    def research(self, school_name: str, location: str, job_description: str, campaign: dict | None = None) -> StrategicBrief:
         """Research the institution and produce a strategic brief.
 
         Args:
             school_name: The name of the hiring school.
             location: The geographic location (city / country).
             job_description: The full job description text.
+            campaign: Optional campaign config dict (enables PART-8 brief).
 
         Returns:
             A :class:`StrategicBrief` populated with research findings.
         """
+        ctx_campaign = campaign if campaign is not None else self.campaign
         context = ResearchContext(
             school_name=school_name,
             location=location,
             job_description=job_description,
             profile=self.profile,
+            campaign=ctx_campaign,
         )
 
         for step in range(1, self.MAX_STEPS + 1):
@@ -440,11 +542,19 @@ class ResearchAgent:
     def _synthesise(self, context: ResearchContext, school_name: str) -> StrategicBrief:
         """Last-ditch synthesis from gathered observations when the step limit
         is reached before the agent calls finalise."""
-        prompt = SYNTHESIS_PROMPT.format(
-            observations=context.observations_text(),
-            profile=json.dumps(self.profile, indent=2),
-            school_name=school_name,
-        )
+        if context.campaign is not None:
+            prompt = SYNTHESIS_PROMPT_CAMPAIGN.format(
+                campaign_directive=context.campaign.get("research_agent_prompt", ""),
+                observations=context.observations_text(),
+                profile=json.dumps(self.profile, indent=2),
+                school_name=school_name,
+            )
+        else:
+            prompt = SYNTHESIS_PROMPT.format(
+                observations=context.observations_text(),
+                profile=json.dumps(self.profile, indent=2),
+                school_name=school_name,
+            )
         raw = self.llm.complete(prompt, max_tokens=1200, temperature=0.3)
         if raw is None:
             return StrategicBrief.fallback(school_name)

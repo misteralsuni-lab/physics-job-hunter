@@ -64,6 +64,8 @@ class Settings(BaseSettings):
 
     camoufox_enabled: bool = False
 
+    campaign: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 

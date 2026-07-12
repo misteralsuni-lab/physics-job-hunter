@@ -1,0 +1,67 @@
+{
+  "id": "pe_central_europe",
+  "secondary_lane_enabled": true,
+  "scoring": {
+    "weights": {
+      "curriculum_match": 30,
+      "visa": 20,
+      "location": 15,
+      "career": 20,
+      "competition": 15
+    },
+    "curriculum_match": {
+      "components": {
+        "pearson_edexcel_a_level_physics": 15,
+        "pearson_edexcel_a_level_maths": 10,
+        "pearson_edexcel_igcse_physics": 10,
+        "pearson_edexcel_igcse_maths": 10,
+        "strong_stem": 5
+      }
+    },
+    "subject_match": {
+      "physics_vacancy": 15,
+      "maths_vacancy": 10,
+      "physics_and_maths": 20
+    },
+    "visa": {
+      "explicit_sponsorship": 20,
+      "international_hiring_history": 10,
+      "unknown": 5
+    },
+    "location": {
+      "components": {
+        "dresden_region": 20,
+        "germany": 15,
+        "czechia": 10,
+        "central_europe": 5
+      }
+    }
+  },
+  "lane": {
+    "adjacency_boost": 0.6
+  },
+  "curriculum_precedence": ["Edexcel", "Cambridge", "IB", "Other"],
+  "confidence": {
+    "routing": {
+      "high": ["apply_immediately"],
+      "medium": ["network_first"],
+      "low": ["low_priority"]
+    }
+  },
+  "classification_thresholds": {
+    "apply_immediately": 66,
+    "network_first": 45
+  },
+  "target_schools": [
+    {"name": "Leonardo V. Academy", "location": "Prague, CZ", "lane": "edexcel_only", "curriculum": "Edexcel", "visa": 17, "career": 11, "competition": 7},
+    {"name": "International School OWL", "location": "Paderborn, DE", "lane": "edexcel_only", "curriculum": "Edexcel", "visa": 16, "career": 11, "competition": 5},
+    {"name": "Akademeia High School", "location": "Warsaw, PL", "lane": "edexcel_only", "curriculum": "Edexcel", "visa": 12, "career": 14, "competition": 6},
+    {"name": "Berlin British School", "location": "Berlin, DE", "lane": "curriculum_adjacent", "curriculum": "Cambridge", "visa": 17, "career": 14, "competition": 12},
+    {"name": "Berlin Metropolitan School", "location": "Berlin, DE", "lane": "curriculum_adjacent", "curriculum": "Cambridge", "visa": 17, "career": 13, "competition": 12},
+    {"name": "St. George's Prague", "location": "Prague, CZ", "lane": "curriculum_adjacent", "curriculum": "Cambridge", "visa": 16, "career": 13, "competition": 10},
+    {"name": "Prague British International School", "location": "Prague, CZ", "lane": "curriculum_adjacent", "curriculum": "Cambridge", "visa": 16, "career": 13, "competition": 10},
+    {"name": "Leipzig International School", "location": "Leipzig, DE", "lane": "curriculum_adjacent", "curriculum": "Cambridge", "visa": 16, "career": 12, "competition": 11},
+    {"name": "Dresden International School", "location": "Dresden, DE", "lane": "curriculum_adjacent", "curriculum": "Cambridge", "visa": 16, "career": 12, "competition": 10}
+  ],
+  "research_agent_prompt": "This is the Pearson Edexcel Central Europe campaign. Produce a PART-8 strategic brief with four sections: School Profile, Recruitment Analysis, Candidate Match, and Contact Strategy. Do NOT write an outreach email (the cover-letter generator owns that). For School Profile summarise the institution's curriculum, location and hiring context. For Recruitment Analysis assess demand, visa/sponsorship posture and competition. For Candidate Match map Mahmoud's Pearson Edexcel IGCSE (4PH1) and A-Level Physics/Maths expertise to the role, bridging Cambridge/IB Physics-Maths via the ~90% content-overlap framing where relevant. For Contact Strategy recommend a concrete outreach channel and timing (Oct-Dec pre-peak for Aug starts)."
+}

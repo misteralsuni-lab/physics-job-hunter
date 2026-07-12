@@ -400,7 +400,7 @@ class CoverLetterGenerator:
     # Public API
     # ------------------------------------------------------------------
 
-    def generate(self, job: dict[str, Any]) -> str | None:
+    def generate(self, job: dict[str, Any], campaign: dict | None = None) -> str | None:
         """Generate a cover letter for *job* and save it to disk.
 
         Tries the configured LLM provider first; if no provider is available
@@ -425,6 +425,23 @@ class CoverLetterGenerator:
                 research_brief=json.dumps(job.get("research_brief") or {}, indent=2, default=str),
                 profile=json.dumps(self.profile, indent=2, default=str),
             )
+            if campaign is not None:
+                lane = job.get("lane", "")
+                if lane == "edexcel_only":
+                    directive = (
+                        "\n\nCAMPAIGN DIRECTIVE: This is the Pearson Edexcel Central Europe "
+                        "campaign and this role is in the edexcel_only lane — lean fully into "
+                        "Mahmoud's Pearson Edexcel 4PH1 IGCSE and A-Level Physics/Maths authority."
+                    )
+                else:
+                    directive = (
+                        "\n\nCAMPAIGN DIRECTIVE: This is the Pearson Edexcel Central Europe "
+                        "campaign and this role is in the curriculum_adjacent lane — bridge the "
+                        "school's Cambridge/IB Physics-Maths to Mahmoud's Edexcel expertise via the "
+                        "~90% content-overlap framing, pulling from the research brief's "
+                        "institution_facts, school_profile, candidate_match and contact_strategy."
+                    )
+                prompt += directive
             letter = fn(prompt)
             if letter is not None:
                 letter = letter.strip()
