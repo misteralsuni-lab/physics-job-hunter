@@ -1,0 +1,80 @@
+{
+  "id": "pe_central_europe_cambridge",
+  "mode": "proactive_discovery",
+  "required_curriculum": "Cambridge",
+  "fallback_for": "pe_central_europe",
+  "discovery": {
+    "center": {"name": "Dresden", "lat": 51.0504, "lon": 13.7373},
+    "max_radius_km": 300,
+    "ring_step_km": 50,
+    "cap": 40,
+    "web_search_only": true,
+    "region_queries": {
+      "0": "Dresden Saxony",
+      "50": "Dresden Saxony",
+      "100": "Leipzig Saxony",
+      "150": "Berlin Brandenburg",
+      "200": "Prague Bohemia",
+      "250": "Czech-German border Saxony Bavaria",
+      "300": "Czechia Germany border"
+    }
+  },
+  "scoring": {
+    "weights": {
+      "curriculum_match": 30,
+      "visa": 20,
+      "location": 15,
+      "career": 20,
+      "competition": 15
+    },
+    "curriculum_match": {
+      "components": {
+        "cambridge_a_level_physics": 15,
+        "cambridge_a_level_maths": 10,
+        "cambridge_igcse_physics": 10,
+        "cambridge_igcse_maths": 10,
+        "strong_stem": 5
+      }
+    },
+    "subject_match": {
+      "physics_vacancy": 15,
+      "maths_vacancy": 10,
+      "physics_and_maths": 20
+    },
+    "visa": {
+      "explicit_sponsorship": 20,
+      "international_hiring_history": 10,
+      "unknown": 5
+    },
+    "location": {
+      "components": {
+        "dresden_region": 20,
+        "germany": 15,
+        "czechia": 10,
+        "central_europe": 5
+      }
+    }
+  },
+  "lane": {
+    "adjacency_boost": 1.0
+  },
+  "curriculum_precedence": ["Cambridge", "Edexcel", "IB", "Other"],
+  "confidence": {
+    "routing": {
+      "high": ["apply_immediately"],
+      "medium": ["network_first"],
+      "low": ["low_priority"]
+    }
+  },
+  "classification_thresholds": {
+    "apply_immediately": 66,
+    "network_first": 45
+  },
+  "output": {
+    "base_dir": "data/campaign_pe_central_europe_cambridge",
+    "prospects_dir": "prospects",
+    "emails_dir": "emails",
+    "strategy_report": "STRATEGY_REPORT.md"
+  },
+  "research_agent_prompt": "This is the Cambridge-only fallback campaign for Pearson Edexcel Central Europe (triggered only if the Edexcel-primary outreach yields no positive replies). Produce a PART-8 strategic brief with four sections: School Profile, Recruitment Analysis, Candidate Match, and Contact Strategy. Do NOT write an outreach email (the cover-letter generator owns that). For School Profile summarise the institution's curriculum, location and hiring context. For Recruitment Analysis assess demand, visa/sponsorship posture and competition. For Candidate Match map Mahmoud's Pearson Edexcel IGCSE (4PH1) and A-Level Physics/Maths expertise to the role, bridging the school's Cambridge/IB Physics-Maths to Mahmoud's Edexcel via the ~90% content-overlap framing. For Contact Strategy recommend a concrete outreach channel and timing (Oct-Dec pre-peak for Aug starts). This is a SPECULATIVE prospecting campaign: there is no live vacancy. Research the institution as a real, geo-anchored target school and produce a brief that supports a proactive outreach email proposing a meeting or demo lesson in case a position opens soon."
+}

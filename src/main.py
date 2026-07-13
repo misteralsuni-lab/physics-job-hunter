@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import sys
 from datetime import datetime
 
@@ -442,7 +443,20 @@ def run_pipeline(force_notify: bool = False) -> dict:
 def main():
     parser = argparse.ArgumentParser(description="Physics Job Hunter Pipeline")
     parser.add_argument("--force-notify", action="store_true", help="Notify all scored jobs ≥80, ignoring 'notified' flag")
+    parser.add_argument("--campaign-run", action="store_true",
+                        help="Run the proactive discovery campaign (CAMPAIGN env must be set) instead of the reactive pipeline.")
+    parser.add_argument("--campaign-id", default=None,
+                        help="Campaign id for --campaign-run (overrides CAMPAIGN env if set).")
     args = parser.parse_args()
+
+    if args.campaign_run:
+        from src.campaign_runner import run_campaign
+        force = os.getenv("FORCE", "").strip() == "1"
+        campaign_id = args.campaign_id or (settings.campaign or "").strip() or None
+        result = run_campaign(campaign_id=campaign_id, force=force)
+        print(f"Campaign done. {result['discovered']} discovered, "
+              f"{result['top10']} top-10 researched in {result['elapsed']:.1f}s")
+        sys.exit(0)
 
     result = run_pipeline(force_notify=args.force_notify)
     print(f"Done. {result['new']} new jobs, {result['scored']} scored in {result['elapsed']:.1f}s")

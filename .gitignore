@@ -1,0 +1,12 @@
+# Generated campaign-run artifacts (do NOT commit discovered prospects / emails)
+data/campaign_pe_central_europe/
+data/campaign_pe_central_europe_cambridge/
+data/prospects.db
+data/dedup.db
+data/job_cache/
+data/local_job_db.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/

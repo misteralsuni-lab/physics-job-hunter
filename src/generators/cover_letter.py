@@ -41,6 +41,42 @@ CRITICAL CONSTRAINTS:
 Output the letter text directly. No preamble, no commentary, no markdown."""
 
 
+SPECULATIVE_EMAIL_PROMPT = """You are a professional educational copywriter drafting a highly targeted, SPECULATIVE outreach email for a proactive campaign. Write in British English.
+
+SCHOOL / PROSPECT:
+{job}
+
+RESEARCH BRIEF:
+{research_brief}
+
+APPLICANT PROFILE:
+{profile}
+
+CANDIDATE: Mahmoud Alsini — B.Sc. Engineering Science, University of Tripoli (2020), completing PGCEi at Liverpool John Moores University, 4+ years teaching Physics and Mathematics internationally, expertise in Pearson Edexcel IGCSE (4PH1) and A-Level curricula, pedagogical focus on Cognitive Load Theory and Assessment for Learning.
+
+CONTEXT — SPECULATIVE OUTREACH (no live vacancy):
+Mahmoud is building an entry pathway into the Central European international-school market. He has a relative in Dresden and will be visiting Dresden and the nearby city next month. This email is NOT an application for a posted vacancy.
+
+FORMAT:
+- Subject line: short, professional.
+- Greeting: "Dear Admissions / HR Team" or "Dear Head of Science".
+- Closing: "Yours faithfully," followed by "Mahmoud Alsini".
+
+CRITICAL CONSTRAINTS:
+1. LENGTH CEILING: Maximum 300 words.
+2. NO CLICHES: strictly ban generic filler phrases.
+3. ANCHORING: Reference 2-3 specific, unique facts about the school from the RESEARCH BRIEF (e.g. its Edexcel/Physics offering, campus, recent news). If the brief is empty, anchor on the school's stated curriculum from the prospect details.
+4. SPECULATIVE FRAMING (mandatory):
+   - Introduce Mahmoud's Pearson Edexcel IGCSE/A-Level Physics & Maths specialism.
+   - State he will be visiting Dresden and the nearby city next month (he has a relative there).
+   - Propose a brief meeting, informal interview, or demo lesson in case a Physics/Maths position opens in the near future.
+   - Note his CV is attached (CV_Mahmoud_Alsini.html).
+   - Do NOT say "I am applying for the vacancy of X" or imply a posted job exists.
+5. Weave qualifications naturally.
+
+Output the email text directly. No preamble, no commentary, no markdown."""
+
+
 def _generate_fallback_letter(job: dict[str, Any], profile: dict[str, Any]) -> str:
     """Generate a structured cover letter from a template when no LLM is available."""
     title = job.get("title", "the advertised position")
@@ -58,8 +94,26 @@ My classroom practice is grounded in Cognitive Load Theory and Assessment for Le
 
 I would welcome the opportunity to discuss how my experience and educational philosophy can contribute to the continued success of your Science department.
 
+        Yours faithfully,
+        Mahmoud altaher Alsini
+        """
+
+
+def _generate_fallback_speculative_email(prospect: dict[str, Any], profile: dict[str, Any]) -> str:
+    """Template speculative outreach email when no LLM is available."""
+    school = prospect.get("school_name", "your school")
+    location = prospect.get("location", "your region")
+    offerings = ", ".join(prospect.get("pearson_offerings", []) or ["Edexcel Physics and Mathematics"])
+    return f"""Dear Admissions / HR Team,
+
+I am writing to introduce myself as a Pearson Edexcel Physics and Mathematics specialist, in case a teaching position opens at {school} in the near future. I hold a B.Sc. in Engineering Science from the University of Tripoli (2020) and am currently completing my PGCEi at Liverpool John Moores University, with over four years of international experience across the Pearson Edexcel IGCSE (4PH1) and A-Level curricula.
+
+I understand {school} offers {offerings}, and I would welcome the chance to contribute to your Science department's continued success. My classroom practice is grounded in Cognitive Load Theory and Assessment for Learning, and I design instruction that respects the architecture of working memory while fostering genuine scientific curiosity.
+
+I will be visiting Dresden and the nearby city next month, as I have a relative there, and would be glad to arrange a brief meeting, informal interview, or demo lesson at your convenience. My CV is attached for your reference (CV_Mahmoud_Alsini.html).
+
 Yours faithfully,
-Mahmoud altaher Alsini
+Mahmoud Alsini
 """
 
 
@@ -400,12 +454,21 @@ class CoverLetterGenerator:
     # Public API
     # ------------------------------------------------------------------
 
-    def generate(self, job: dict[str, Any], campaign: dict | None = None) -> str | None:
-        """Generate a cover letter for *job* and save it to disk.
+    def generate(
+        self,
+        job: dict[str, Any],
+        campaign: dict | None = None,
+        speculative: bool = False,
+        out_dir: str | None = None,
+    ) -> str | None:
+        """Generate a cover letter (or speculative outreach email) and save it.
 
-        Tries the configured LLM provider first; if no provider is available
-        it falls back to a template-based letter so the user always has a
-        draft to review.
+        For the reactive job pipeline, *speculative* is ``False`` and the
+        letter is saved under ``data/cover_letters``. For the proactive
+        campaign, *speculative* is ``True``: the email uses the
+        Dresden-visit framing (no "application for vacancy" language) and is
+        saved under the campaign's ``emails`` directory when *out_dir* is
+        supplied.
 
         Returns the absolute file path of the saved letter, or ``None``
         if generation fails.
@@ -420,57 +483,76 @@ class CoverLetterGenerator:
         provider_name, fn = self._llm_provider  # type: ignore[misc]
 
         if fn is not None:
-            prompt = COVER_LETTER_PROMPT.format(
-                job=json.dumps(job, indent=2, default=str),
-                research_brief=json.dumps(job.get("research_brief") or {}, indent=2, default=str),
-                profile=json.dumps(self.profile, indent=2, default=str),
-            )
-            if campaign is not None:
-                lane = job.get("lane", "")
-                if lane == "edexcel_only":
-                    directive = (
-                        "\n\nCAMPAIGN DIRECTIVE: This is the Pearson Edexcel Central Europe "
-                        "campaign and this role is in the edexcel_only lane — lean fully into "
-                        "Mahmoud's Pearson Edexcel 4PH1 IGCSE and A-Level Physics/Maths authority."
-                    )
-                else:
-                    directive = (
-                        "\n\nCAMPAIGN DIRECTIVE: This is the Pearson Edexcel Central Europe "
-                        "campaign and this role is in the curriculum_adjacent lane — bridge the "
-                        "school's Cambridge/IB Physics-Maths to Mahmoud's Edexcel expertise via the "
-                        "~90% content-overlap framing, pulling from the research brief's "
-                        "institution_facts, school_profile, candidate_match and contact_strategy."
-                    )
-                prompt += directive
+            if speculative:
+                prompt = SPECULATIVE_EMAIL_PROMPT.format(
+                    job=json.dumps(self._prospect_text(job), indent=2, default=str),
+                    research_brief=json.dumps(job.get("research_brief") or {}, indent=2, default=str),
+                    profile=json.dumps(self.profile, indent=2, default=str),
+                )
+            else:
+                prompt = COVER_LETTER_PROMPT.format(
+                    job=json.dumps(job, indent=2, default=str),
+                    research_brief=json.dumps(job.get("research_brief") or {}, indent=2, default=str),
+                    profile=json.dumps(self.profile, indent=2, default=str),
+                )
+                if campaign is not None:
+                    lane = job.get("lane", "")
+                    if lane == "edexcel_only":
+                        directive = (
+                            "\n\nCAMPAIGN DIRECTIVE: This is the Pearson Edexcel Central Europe "
+                            "campaign and this role is in the edexcel_only lane — lean fully into "
+                            "Mahmoud's Pearson Edexcel 4PH1 IGCSE and A-Level Physics/Maths authority."
+                        )
+                    else:
+                        directive = (
+                            "\n\nCAMPAIGN DIRECTIVE: This is the Pearson Edexcel Central Europe "
+                            "campaign and this role is in the curriculum_adjacent lane — bridge the "
+                            "school's Cambridge/IB Physics-Maths to Mahmoud's Edexcel expertise via the "
+                            "~90% content-overlap framing, pulling from the research brief's "
+                            "institution_facts, school_profile, candidate_match and contact_strategy."
+                        )
+                    prompt += directive
             letter = fn(prompt)
             if letter is not None:
                 letter = letter.strip()
 
             if letter:
-                # Compose the filename tag with the provider's 2-letter
-                # short code (e.g. "LLM_oc" for opencode_zen) so the
-                # operator can identify which cascade step produced this
-                # letter when reviewing Telegram attachments or browser
-                # listings — useful in case a future bug silently routes
-                # through a different provider than the configured lead.
                 short = self.PROVIDER_SHORT_CODE.get(provider_name or "", "?")
                 source = f"LLM_{short}"
                 log.info(
-                    "LLM cover letter generated for %s at %s via %s → tag %s",
-                    job.get("title", "?"), job.get("school", "?"),
+                    "LLM %s generated for %s via %s → tag %s",
+                    "speculative email" if speculative else "cover letter",
+                    job.get("school_name", job.get("title", "?")),
                     provider_name, source,
                 )
             else:
                 log.warning(
                     "LLM (%s) returned empty for %s — using template fallback",
-                    provider_name, job.get("title", "?"),
+                    provider_name, job.get("school_name", job.get("title", "?")),
                 )
 
         if not letter:
-            log.info("Using template fallback for %s at %s", job.get("title", "?"), job.get("school", "?"))
-            letter = _generate_fallback_letter(job, self.profile)
+            if speculative:
+                log.info("Using speculative template fallback for %s", job.get("school_name", "?"))
+                letter = _generate_fallback_speculative_email(job, self.profile)
+            else:
+                log.info("Using template fallback for %s at %s", job.get("title", "?"), job.get("school", "?"))
+                letter = _generate_fallback_letter(job, self.profile)
 
-        return self._save_letter(job, letter, source)
+        return self._save_letter(job, letter, source, out_dir=out_dir)
+
+    @staticmethod
+    def _prospect_text(prospect: dict[str, Any]) -> dict[str, Any]:
+        """Flatten a campaign prospect into job-like text for the prompt."""
+        return {
+            "school_name": prospect.get("school_name", ""),
+            "location": prospect.get("location", ""),
+            "tier": prospect.get("tier", ""),
+            "campaign_score": prospect.get("campaign_score", ""),
+            "pearson_offerings": prospect.get("pearson_offerings", []),
+            "distance_km": prospect.get("distance_km", ""),
+            "category_f": prospect.get("category_f", False),
+        }
 
     # ------------------------------------------------------------------
     # File I/O
@@ -483,31 +565,54 @@ class CoverLetterGenerator:
         safe = safe.replace(" ", "_")
         return safe[:max_length].rstrip("_")
 
-    def _save_letter(self, job: dict[str, Any], letter: str, source: str = "fallback") -> str:
-        out_dir = Path("data/cover_letters")
-        out_dir.mkdir(parents=True, exist_ok=True)
+    def _save_letter(
+        self,
+        job: dict[str, Any],
+        letter: str,
+        source: str = "fallback",
+        out_dir: str | None = None,
+    ) -> str:
+        base = Path(out_dir) if out_dir else Path("data/cover_letters")
+        base.mkdir(parents=True, exist_ok=True)
 
-        school = self._sanitise_filename(job.get("school", "unknown_school"))
-        title = self._sanitise_filename(job.get("title", "unknown_role"))
+        school = self._sanitise_filename(job.get("school_name") or job.get("school", "unknown_school"))
+        title = self._sanitise_filename(job.get("title") or job.get("school_name", "unknown_role"))
         filename = f"{school}__{title}__{source}.md"
-        filepath = out_dir / filename
+        filepath = base / filename
 
-        score = job.get("score")
+        header_lines = [
+            f"# Outreach Email — {job.get('school_name', job.get('title', 'Unknown'))}\n",
+            "",
+            f"- **School:** {job.get('school_name', job.get('school', 'Unknown'))}",
+        ]
+        if job.get("location"):
+            header_lines.append(f"- **Location:** {job['location']}")
+        if job.get("tier"):
+            header_lines.append(f"- **Tier:** {job['tier']}")
+        if job.get("campaign_score") is not None:
+            header_lines.append(f"- **Campaign Score:** {job['campaign_score']}/100")
+        if job.get("score") is not None:
+            header_lines.append(f"- **Score:** {job['score']}/100")
+        if job.get("confidence"):
+            header_lines.append(f"- **Confidence:** {job['confidence']}")
+        if job.get("distance_km") is not None:
+            header_lines.append(f"- **Distance from Dresden:** {job['distance_km']} km")
+        if job.get("category_f"):
+            header_lines.append(f"- **Category F (live vacancy detected):** Yes")
         reasoning = job.get("scoring_reasoning") or job.get("reasoning") or ""
-        score_line = f"- **Score:** {score}/100\n" if score is not None else ""
-        reasoning_line = f"- **Why this score:** {reasoning}\n" if reasoning else ""
-        header = (
-            f"# Cover Letter — {job.get('title', 'Unknown')}\n"
-            f"\n"
-            f"- **School:** {job.get('school', 'Unknown')}\n"
-            f"{score_line}"
-            f"{reasoning_line}"
-            f"- **Date:** {datetime.now().strftime('%Y-%m-%d')}\n"
-            f"- **Job URL:** {job.get('url', '#')}\n"
-            f"\n"
-            f"---\n\n"
-        )
+        if reasoning:
+            header_lines.append(f"- **Why this score:** {reasoning}")
+        if job.get("evidence_urls"):
+            urls = ", ".join(job["evidence_urls"])
+            header_lines.append(f"- **Evidence:** {urls}")
+        header_lines.append(f"- **Date:** {datetime.now().strftime('%Y-%m-%d')}")
+        if job.get("url"):
+            header_lines.append(f"- **Job URL:** {job['url']}")
+        header_lines.append("")
+        header_lines.append("---")
+        header_lines.append("")
+        header = "\n".join(header_lines)
 
         filepath.write_text(header + letter, encoding="utf-8")
-        log.info("Cover letter saved → %s", filepath.resolve())
+        log.info("Outreach email saved → %s", filepath.resolve())
         return str(filepath.resolve())

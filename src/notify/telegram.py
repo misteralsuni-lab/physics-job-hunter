@@ -140,6 +140,56 @@ def send_telegram_alert(
             )
             _send_document(chat_id, paths[url], caption)
 
+        return sent
+
+
+def send_campaign_digest(
+    prospects: list[dict[str, Any]],
+    email_paths: dict[str, str] | None = None,
+) -> int:
+    """Send a Telegram digest for the campaign's top-10 prospects.
+
+    Sends one summary message listing each prospect (school, location, score,
+    tier, Category-F flag) followed by the generated outreach-email documents
+    as attachments. Returns the number of messages sent.
+
+    Parameters
+    ----------
+    prospects:
+        Ordered list of top prospects (dicts with ``school_name``,
+        ``location``, ``campaign_score``, ``tier``, ``category_f``,
+        ``normalized_key`` / ``outreach_email_path``).
+    email_paths:
+        Mapping of ``normalized_key`` → absolute path of the generated email
+        file. When present, each file is attached after the summary.
+    """
+    if not settings.telegram_bot_token or not settings.telegram_chat_id:
+        return 0
+
+    chat_id = settings.telegram_chat_id
+    email_paths = email_paths or {}
+    sent = 0
+
+    lines = ["📋 <b>Campaign Prospect Digest — Top 10</b>\n"]
+    for i, p in enumerate(prospects, 1):
+        name = p.get("school_name", "Unknown")
+        loc = p.get("location", "")
+        score = p.get("campaign_score", 0)
+        tier = p.get("tier", "")
+        catf = " 🔥CatF" if p.get("category_f") else ""
+        lines.append(
+            f"{i}. <b>{_esc(name)}</b> — {_esc(loc)} · {score}/100 · {_esc(tier)}{catf}"
+        )
+
+    if _send_message(chat_id, "\n".join(lines)):
+        sent += 1
+
+    for p in prospects:
+        key = p.get("normalized_key") or p.get("school_name", "")
+        path = email_paths.get(key) or p.get("outreach_email_path")
+        if path:
+            _send_document(chat_id, path, f"📧 {_esc(p.get('school_name', ''))}")
+
     return sent
 
 
@@ -156,7 +206,6 @@ if __name__ == "__main__":
     n = send_telegram_alert([test_job])
     print(f"Sent {n} message(s)")
 
-    # Test with a cover letter attachment
     test_paths = {test_job["url"]: "C:\\path\\to\\cover_letter.md"}
     n2 = send_telegram_alert([test_job], cover_letter_paths=test_paths)
     print(f"Sent {n2} message(s) with cover letter")
