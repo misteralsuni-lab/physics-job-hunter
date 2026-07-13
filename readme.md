@@ -23,7 +23,31 @@ The scheduler runs as a background service managed by systemd. It auto-starts on
 - **Watch live activity** — `journalctl --user -u physics-job-hunter.service -f`
 - **Stop it from auto-starting on boot** — `systemctl --user disable physics-job-hunter.service`
 
-The robot wakes up at 06:00, 08:00, 10:00, 12:00, 14:00, 16:00, 18:00, 20:00, and 22:00 every day.
+The robot wakes up at the times set in `SCHEDULE_TIME` (default `08:00, 17:00, 22:00, 22:30, 23:00`) every day.
+
+---
+
+## Tutoring leads (inbound bot)
+
+A separate Telegram bot answers tutoring enquiries and captures leads into the same dashboard.
+
+- **Turn it on** — `systemctl --user start physics-job-hunter-bot.service`
+- **Turn it off** — `systemctl --user stop physics-job-hunter-bot.service`
+- **Watch live activity** — `journalctl --user -u physics-job-hunter-bot.service -f`
+
+---
+
+## Front-end dashboard (web/)
+
+A touch-friendly Next.js control panel for the pipeline (dashboard, pipeline control, settings, and tutoring leads).
+
+- **Install dependencies** — `cd web && pnpm install`
+- **Run it while developing** — `cd web && pnpm dev` (opens at http://localhost:3000)
+- **Check for errors before committing** — `cd web && pnpm typecheck && pnpm lint`
+- **Build for production** — `cd web && pnpm build` (on low-memory machines: `NODE_OPTIONS="--max-old-space-size=2048" pnpm build`)
+- **Run the production build** — `cd web && pnpm start`
+
+The dashboard reads its settings from `web/.env.local` (Supabase URL + service-role key, `PIPELINE_CWD`, `SYSTEMD_UNIT`, optional `ADMIN_TOKEN`). See `web/README.md` for the full list.
 
 ---
 
