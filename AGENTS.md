@@ -34,6 +34,35 @@
 6. **Research** — `ResearchAgent` produces a `StrategicBrief` for every job scored ≥ `RESEARCH_SCORE_THRESHOLD` (default 60). Uses a ReAct-style LLM loop with two tools: `web_search` (DuckDuckGo) and `deep_scrape` (Firecrawl or HTTP fallback). The brief feeds `institution_facts`, `strategic_alignment`, and `recommended_angle` into the cover letter generator. Falls back to `StrategicBrief.fallback()` if research fails.
 7. **Notify** — Telegram (`src/notify/telegram.py`) + Email (`src/notify/email_sender.py`, Resend or SMTP) for jobs scored ≥ `settings.notify_score_threshold` (default 50, configurable via `NOTIFY_SCORE_THRESHOLD` in `.env`)
 
+## Campaign Mode (targeted acquisition)
+
+The pipeline can be re-targeted to a specific acquisition campaign via the `CAMPAIGN`
+env var, **without** touching the shared `profile.json` or any other branch.
+
+- **Activate**: `CAMPAIGN=pe_central_europe python3 -m src.main`
+- **Loader**: `src/campaign.py:load_campaign()` returns `None` when `CAMPAIGN` is empty
+  (legacy behaviour, zero change) or the dict from `data/campaign_<name>.json`.
+- **Two-lane model** — the campaign JSON defines an `edexcel_only` primary lane and a
+  `curriculum_adjacent` secondary lane (Cambridge/IB Physics-Maths) at a `0.6×`
+  `adjacency_boost`. The pre-filter's `_EXCLUDED_EXAM_BOARDS` (Cambridge/IB/AQA/IB…) is
+  lifted **only when a campaign is active**, so adjacent-board schools can pass the
+  filter; in legacy mode the exclusion stays in force.
+- **Tagging**: `tag_campaign()` (`src/main.py`) derives `curriculum`, `region`, `lane`,
+  and a deterministic `campaign_score` (0–100) from each surviving job's
+  title/school/location/description text — deliberately NOT the sparse `curriculum`
+  field (only TES/LinkedIn populate it). `curriculum_adjacent` jobs are dropped when
+  `secondary_lane_enabled=false`.
+- **Scoring/Research/Cover-letter**: `LLMScorer`, `ResearchAgent`, and
+  `CoverLetterGenerator` all accept a `campaign` arg that injects campaign context
+  into their prompts (Edexcel > adjacent; Dresden > Germany > Czechia weighting) without
+  altering the 0–100 rubric or the notify/research gates.
+- **Config**: `data/campaign_pe_central_europe.json` — the live campaign for a Pearson
+  Edexcel Physics+Maths teacher targeting Central Europe (Dresden family base). Implements
+  the decision in `docs/research/pe-architecture.md`; the two-lane scoring schema lives in
+  `docs/research/pe-synthesis.md` §4.
+- **Safety rail**: the hard `physics in combined` guard in `_is_relevant()` is always
+  enforced, in both legacy and campaign modes.
+
 ## Important gotchas
 
 - **Python >= 3.12** required
@@ -165,10 +194,13 @@ cat ~/.cache/camoufox/version.json  # should show 135.0.1-beta.24
 - `SCHEDULE_TIME` format: comma-separated 24h, e.g. `08:00,17:00,22:00,22:30,23:00`
 - `NOTIFY_SCORE_THRESHOLD` — minimum score for notifications (default 50, set in `.env`)
 - `RESEARCH_SCORE_THRESHOLD` — minimum score for deep research (default 60, set in `.env`)
+- `CAMPAIGN` — campaign id to re-target the pipeline (e.g. `pe_central_europe`); empty = legacy behaviour. Loads `data/campaign_<id>.json` via `src/campaign.py:load_campaign()`.
 
 ## Key files
 
 - `src/scoring/llm_scorer.py` — Weighted Load Balancer, 5 providers, model rotation, tenacity, health state machine, leaky bucket, `_extract_json`/`_extract_json_array`
+- `src/campaign.py` — campaign config loader (`load_campaign()`); returns `None` when no campaign active so legacy behaviour is unchanged
+- `data/campaign_pe_central_europe.json` — live "Pearson Edexcel Central Europe" campaign rule set (two-lane scoring, geography weights, school whitelist)
 - `src/storage/supabase_client.py` — Supabase CRUD; every method falls through to `DedupStore` on `httpx.HTTPError`
 - `src/storage/dedup_store.py` — SQLite tables `seen_urls` and `job_cache`; persisted across runs
 - `src/generators/cover_letter.py` — 5-provider cascade, `__LLM`/`__fallback` filename tagging; now consumes `research_brief` dict from job for institution-aware writing
