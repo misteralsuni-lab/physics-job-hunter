@@ -1,3 +1,9 @@
+# Secrets — .env is untracked as of 2026-09-30. Never re-add it.
+# These were committed once in 5d28829; all credentials have been rotated.
+.env
+.env.*
+!.env.example
+
 # Generated campaign-run artifacts (do NOT commit discovered prospects / emails)
 data/campaign_pe_central_europe/
 data/campaign_pe_central_europe_cambridge/
@@ -8,5 +14,22 @@ data/local_job_db.json
 
 # Python
 __pycache__/
-*.pyc
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .venv/
+venv/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+web/config.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
