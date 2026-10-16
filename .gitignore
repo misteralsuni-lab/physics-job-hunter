@@ -4,6 +4,41 @@
 .env.*
 !.env.example
 
+# ============================================================
+# Personal data — NEVER commit cover letters, CVs, profiles, applications,
+# or any document containing personal information (yours or anyone else's).
+# Hard rule enforced 2026-10-16: these files were untracked from the index
+# but remain on disk. Do not `git add -f`, do not re-add, do not paste
+# their contents into commits, code, docs, or logs.
+# ============================================================
+data/cover_letters/
+CV_*.html
+cv_redesign*.py
+apllications/
+applications/
+data/profile.json
+data/profile_tutoring.json
+
+# Personal documents (interviews, relocation, lesson demos, applications)
+data/DECK_COMPARISON_REPORT.md
+data/INTERVIEW_*.md
+data/SIDDIQ_*.md
+data/RELOCATION_SIMULATION.md
+data/Radioactivity_Demo_25Jun.pptx
+/dresden-schools-proximity.png
+
+# Scanned personal documents & session transcripts
+_pdfscan/
+opencode export*.json
+
+# Vendored agents repo — personal documents
+agency-agents-main/**/*.docx
+agency-agents-main/**/*.pptx
+
+# Windows redirect artefacts (tracked by accident, untracked 2026-10-16)
+/nul
+/bash
+
 # Generated campaign-run artifacts (do NOT commit discovered prospects / emails)
 data/campaign_pe_central_europe/
 data/campaign_pe_central_europe_cambridge/
