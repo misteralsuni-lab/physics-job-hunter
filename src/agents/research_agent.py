@@ -270,20 +270,20 @@ class LLMClient:
     # --------------------------------------------------------------
 
     def _providers(self) -> list[tuple[str, Callable]]:
-        # Provider cascade priority (re-ordered 2026-06-29 to match the
-        # project-wide LLM weights: opencode_zen → nvidia → groq →
-        # openrouter → gemini).
+        # Provider cascade priority (updated 2026-09-23 to match
+        # PROVIDER_WEIGHTS: gemini → nvidia → groq → openrouter →
+        # opencode_zen (key expired)).
         p: list[tuple[str, Callable]] = []
-        if settings.opencode_zen_api_key:
-            p.append(("opencode_zen", self._call_opencode_zen))
+        if settings.gemini_api_key:
+            p.append(("gemini", self._call_gemini))
         if settings.nvidia_api_key and settings.nvidia_api_key != "nvapi-":
             p.append(("nvidia", self._call_nvidia))
         if settings.groq_api_key:
             p.append(("groq", self._call_groq))
         if settings.openrouter_api_key:
             p.append(("openrouter", self._call_openrouter))
-        if settings.gemini_api_key:
-            p.append(("gemini", self._call_gemini))
+        if settings.opencode_zen_api_key:
+            p.append(("opencode_zen", self._call_opencode_zen))
         return p
 
     # --------------------------------------------------------------
@@ -390,8 +390,8 @@ class LLMClient:
             return None
 
     def _call_opencode_zen(self, prompt: str, max_tokens: int, temperature: float) -> str | None:
-        # Primary: hy3-free (OpenCode Zen). deepseek-v4-flash-free is the
-        # fallback if hy3-free is unavailable / errors (2026-07-12). The
+        # Primary: mimo-v2.5-free (OpenCode Zen). deepseek-v4-flash-free is the
+        # fallback if mimo-v2.5-free is unavailable / errors (2026-08-30). The
         # paid ``deepseek-v4-pro`` / ``deepseek-v4-flash`` fallbacks were
         # dropped on 2026-06-28 — both return 401 CreditsError for the
         # workspace ``wrk_01KRNSES9FY5ACEMK78BKAC1QY`` (no payment method).
@@ -403,7 +403,7 @@ class LLMClient:
         # the model to finish reasoning and emit the visible answer
         # (e.g. ``content: '80'`` for the IGCSE-Physics scoring prompt).
         # Endpoint: https://opencode.ai/zen/v1/chat/completions
-        for model in ("hy3-free", "deepseek-v4-flash-free"):
+        for model in ("mimo-v2.5-free", "deepseek-v4-flash-free"):
             from src.config import settings as _s
             try:
                 # Use at least 4096 tokens to leave reasoning headroom,

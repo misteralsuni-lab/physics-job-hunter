@@ -119,6 +119,20 @@ class StrategicBrief(BaseModel):
             raise ValueError("institution_facts must contain at least 2 non-empty facts")
         return cleaned
 
+    @field_validator("strategic_alignment")
+    @classmethod
+    def _truncate_strategic_alignment(cls, v: str) -> str:
+        if len(v) > 800:
+            return v[:797] + "..."
+        return v
+
+    @field_validator("recommended_angle")
+    @classmethod
+    def _truncate_recommended_angle(cls, v: str) -> str:
+        if len(v) > 400:
+            return v[:397] + "..."
+        return v
+
     @classmethod
     def fallback(cls, school_name: str = "the school") -> "StrategicBrief":
         """Return a graceful fallback brief when research data is unavailable."""

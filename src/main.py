@@ -16,7 +16,10 @@ from src.scrapers.search_associates import SearchAssociatesScraper
 from src.scrapers.gulftalent import GulfTalentScraper
 from src.scrapers.schrole import SchroleScraper
 from src.scrapers.libyan_jobs import LibyanJobsScraper
+from src.scrapers.bsoteachers import BSOTeachersScraper
+from src.scrapers.seekteachers import SeekTeachersScraper
 from src.storage.supabase_client import SupabaseClient
+from src.storage.dedup_store import DedupStore, job_signature
 from src.scoring.llm_scorer import LLMScorer
 from src.generators.cover_letter import CoverLetterGenerator
 from src.agents.research_agent import ResearchAgent
@@ -258,7 +261,8 @@ def run_scrapers() -> list[dict]:
                 TopTutorJobScraper(),
                 SearchAssociatesScraper(), TeacherHorizonsScraper(),
                 GulfTalentScraper(),
-                SchroleScraper(), LibyanJobsScraper()]
+                SchroleScraper(), LibyanJobsScraper(), BSOTeachersScraper(),
+                SeekTeachersScraper()]
     all_jobs = []
     for scraper in scrapers:
         try:
@@ -278,9 +282,12 @@ def score_jobs_in_memory(jobs: list[dict], scorer: LLMScorer) -> list[dict]:
     log.info("Scoring %d jobs in memory (batch)...", len(unscored))
     try:
         results = scorer.batch_score(unscored)
-        for job, result in zip(unscored, results):
-            job["score"] = result.get("score", 0)
-            job["scoring_reasoning"] = result.get("reasoning", "")
+        for i, result in enumerate(results[: len(unscored)]):
+            unscored[i]["score"] = result.get("score", 0)
+            unscored[i]["scoring_reasoning"] = result.get("reasoning", "")
+        if len(results) < len(unscored):
+            log.warning("  ! batch returned %d result(s) for %d job(s) — %d left unscored",
+                        len(results), len(unscored), len(unscored) - len(results))
         log.info("  → %d jobs scored in memory", len(unscored))
     except Exception as e:
         log.error("  ✗ Batch scoring failed: %s — falling back to individual", e)
@@ -306,9 +313,12 @@ def score_jobs_from_db(db: SupabaseClient, scorer: LLMScorer) -> int:
     scored = 0
     try:
         results = scorer.batch_score(unscored)
-        for job, result in zip(unscored, results):
-            db.update_score(_job_key(job), result.get("score", 0), result.get("reasoning", ""))
+        for i, result in enumerate(results[: len(unscored)]):
+            db.update_score(_job_key(unscored[i]), result.get("score", 0), result.get("reasoning", ""))
             scored += 1
+        if len(results) < len(unscored):
+            log.warning("  ! batch returned %d result(s) for %d job(s) — %d still at score=null",
+                        len(results), len(unscored), len(unscored) - len(results))
     except Exception as e:
         log.error("  ✗ Batch scoring from DB failed: %s — falling back to individual", e)
         for job in unscored:
@@ -322,11 +332,46 @@ def score_jobs_from_db(db: SupabaseClient, scorer: LLMScorer) -> int:
     return scored
 
 
-def send_notifications(jobs: list[dict], db: SupabaseClient | None = None, campaign: dict | None = None) -> None:
+def send_notifications(jobs: list[dict], db: SupabaseClient | None = None, campaign: dict | None = None,
+                       ignore_signatures: bool = False) -> None:
     top_jobs = [j for j in jobs if j.get("score", 0) >= settings.notify_score_threshold]
     if not top_jobs:
         log.info("No top-scoring jobs to notify")
         return
+
+    # Cross-URL signature dedup (school|title|country): the same vacancy
+    # posted by different boards/agencies under different URLs must not
+    # re-alert within the re-post TTL.  Jobs still stored/scored — only the
+    # alert is gated.  ``ignore_signatures`` bypasses this entirely, which is
+    # what --force-notify and --resend-muted need; without it both flags were
+    # no-ops, because the signature gate ran before either could take effect.
+    sig_store = db._dedup if db is not None else DedupStore()
+
+    if not ignore_signatures and sig_store.signature_count() == 0 and db is not None:
+        try:
+            sig_store.backfill_signatures(db.get_notified_jobs())
+        except Exception as e:
+            log.error("Signature backfill failed: %s", e)
+
+    if ignore_signatures:
+        log.info("Signature dedup bypassed — %d job(s) eligible for alert", len(top_jobs))
+    else:
+        unique_jobs = []
+        for job in top_jobs:
+            sig = job_signature(job)
+            first_url = sig_store.signature_notified(sig)
+            if first_url:
+                log.info(
+                    "Signature-dup of %s (already notified) — skipping alert for %s",
+                    first_url, job.get("url", "?"),
+                )
+                continue
+            unique_jobs.append(job)
+
+        if not unique_jobs:
+            log.info("All top-scoring jobs are signature duplicates — nothing to notify")
+            return
+        top_jobs = unique_jobs
 
     # In campaign mode, only research jobs in lanes the campaign allows.
     if campaign is not None:
@@ -377,6 +422,7 @@ def send_notifications(jobs: list[dict], db: SupabaseClient | None = None, campa
 
     if db is not None:
         db.mark_notified([_job_key(j) for j in top_jobs])
+        sig_store.record_signatures(top_jobs, [j.get("url", "") for j in top_jobs])
 
 
 def run_pipeline(force_notify: bool = False) -> dict:
@@ -403,11 +449,31 @@ def run_pipeline(force_notify: bool = False) -> dict:
         existing = db.get_seen_urls()
         new_jobs = [j for j in jobs if j["url"] not in existing]
 
-        if not new_jobs:
-            log.info("No new jobs found")
+        # Upsert *every* scraped job, not just unseen ones: re-upserting an
+        # existing URL refreshes last_seen without touching created_at,
+        # score or notified.  Only the unseen count is reported as "new".
+        if jobs:
+            written = db.upsert_jobs(jobs)
+            if written is None:
+                log.error(
+                    "Upsert did not reach Supabase — %d job(s) went to the local "
+                    "cache only. Dedup is degraded until the next successful run.",
+                    len(jobs),
+                )
+            else:
+                known = len(jobs) - len(new_jobs)
+                if known:
+                    # Only claim last_seen was refreshed when the column
+                    # actually exists — otherwise this is a plain re-upsert.
+                    if db.supports_last_seen:
+                        log.info("Refreshed last_seen for %d already-known job(s)", known)
+                    else:
+                        log.info("Re-upserted %d already-known job(s)", known)
+                log.info("Stored %d new job(s) in Supabase (%d row(s) written)",
+                         len(new_jobs), written)
+            count = len(new_jobs) if written is not None else 0
         else:
-            count = db.upsert_jobs(new_jobs)
-            log.info("Stored %d new jobs in Supabase", count)
+            log.info("No jobs survived scraping and pre-filtering")
 
         db_scored = score_jobs_from_db(db, scorer)
         scored += db_scored
@@ -416,11 +482,16 @@ def run_pipeline(force_notify: bool = False) -> dict:
             all_scored = db.client.table("job_listings").select("*").gte("score", settings.notify_score_threshold).execute().data
             if all_scored:
                 log.info("Force-notify: sending notifications for %d jobs", len(all_scored))
-                send_notifications(all_scored, db, campaign=campaign)
+                send_notifications(all_scored, db, campaign=campaign, ignore_signatures=True)
             else:
                 log.info("Force-notify: no jobs scored >= %d", settings.notify_score_threshold)
         else:
-            db_jobs = db.get_scored_unnotified(min_score=settings.notify_score_threshold)
+            max_age = settings.max_job_age_days or None
+            if max_age:
+                log.info("Freshness gate: excluding jobs first seen more than %d day(s) ago", max_age)
+            db_jobs = db.get_scored_unnotified(
+                min_score=settings.notify_score_threshold, max_age_days=max_age
+            )
             send_notifications(db_jobs, db, campaign=campaign)
 
         db_available = True
@@ -440,14 +511,74 @@ def run_pipeline(force_notify: bool = False) -> dict:
     return {"new": count, "scored": scored, "elapsed": elapsed}
 
 
+def resend_muted(campaign: dict | None = None, min_score: int | None = None) -> int:
+    """Release jobs muted by the old 180-day signature window and re-alert.
+
+    The retired 180-day window suppressed a school|title|country signature for
+    half a year, which meant the 12 top-scoring vacancies sitting at
+    ``notified=false`` in Supabase could never alert again — including a
+    100/100 Subject Leader of Physics role.  This drops their signatures so
+    the notification path treats them as unseen.
+    """
+    threshold = settings.notify_score_threshold if min_score is None else min_score
+    start = datetime.now()
+    log.info("=" * 50)
+    log.info("Resend Muted — releasing signature-blocked jobs >= %d", threshold)
+    log.info("=" * 50)
+
+    db = SupabaseClient()
+    if not db.health_check():
+        raise httpx.HTTPError("Supabase unreachable — cannot release muted jobs")
+
+    muted = (
+        db.client.table("job_listings")
+        .select("*")
+        .eq("notified", False)
+        .gte("score", threshold)
+        .execute()
+        .data
+    )
+    if not muted:
+        log.info("No signature-blocked jobs at or above %d — nothing to release", threshold)
+        return 0
+
+    sig_store = db._dedup
+    released = 0
+    for job in muted:
+        sig = job_signature(job)
+        blocked_by = sig_store.signature_notified(sig)
+        if not blocked_by:
+            continue  # not actually muted; the normal path will pick it up
+        if sig_store.forget_signature(sig):
+            released += 1
+            log.info("  released %s (was muted by %s)", job.get("url", "?"), blocked_by[-40:])
+
+    log.info("Released %d signature(s) covering %d job(s)", released, len(muted))
+    send_notifications(muted, db, campaign=campaign, ignore_signatures=True)
+    db.close()
+
+    elapsed = (datetime.now() - start).total_seconds()
+    log.info("Resend complete in %.1fs", elapsed)
+    return released
+
+
 def main():
     parser = argparse.ArgumentParser(description="Physics Job Hunter Pipeline")
-    parser.add_argument("--force-notify", action="store_true", help="Notify all scored jobs ≥80, ignoring 'notified' flag")
+    parser.add_argument("--force-notify", action="store_true",
+                        help="Notify all scored jobs >= threshold, ignoring both the 'notified' flag and the signature dedup")
+    parser.add_argument("--resend-notified", action="store_true",
+                        help="Release jobs muted by a signature block and re-alert them (bypasses signature dedup).")
+    parser.add_argument("--resend-min-score", type=int, default=None,
+                        help="Minimum score for --resend-notified (default: NOTIFY_SCORE_THRESHOLD).")
     parser.add_argument("--campaign-run", action="store_true",
                         help="Run the proactive discovery campaign (CAMPAIGN env must be set) instead of the reactive pipeline.")
     parser.add_argument("--campaign-id", default=None,
                         help="Campaign id for --campaign-run (overrides CAMPAIGN env if set).")
     args = parser.parse_args()
+
+    if args.resend_notified:
+        resend_muted(campaign=load_campaign(), min_score=args.resend_min_score)
+        sys.exit(0)
 
     if args.campaign_run:
         from src.campaign_runner import run_campaign

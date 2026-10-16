@@ -216,16 +216,16 @@ def _call_openrouter(prompt: str, model: str) -> str | None:
         return None
 
 
-def _call_opencode_zen(prompt: str, model: str = "hy3-free") -> str | None:
+def _call_opencode_zen(prompt: str, model: str = "mimo-v2.5-free") -> str | None:
     """OpenCode Zen single-shot parser call.
 
-    Primary model ``hy3-free`` (2026-07-12); falls back to
+    Primary model ``mimo-v2.5-free`` (2026-08-30); falls back to
     ``deepseek-v4-flash-free`` if it errors. Reasoning headroom:
     max_tokens=4096 so reasoning-mode models finish and emit content.
     """
     if not settings.opencode_zen_api_key:
         return None
-    for m in ("hy3-free", "deepseek-v4-flash-free"):
+    for m in ("mimo-v2.5-free", "deepseek-v4-flash-free"):
         try:
             r = httpx.post(
                 "https://opencode.ai/zen/v1/chat/completions",
@@ -277,7 +277,7 @@ def _provider_call(prompt: str) -> str | None:
     candidates: list[tuple[str, Callable[[str], str | None]]] = []
 
     if settings.opencode_zen_api_key:
-        candidates.append(("opencode_zen:hy3-free",
+        candidates.append(("opencode_zen:mimo-v2.5-free",
                            _call_opencode_zen))
     if settings.nvidia_api_key and settings.nvidia_backup_model:
         candidates.append((f"nvidia:{settings.nvidia_backup_model}",

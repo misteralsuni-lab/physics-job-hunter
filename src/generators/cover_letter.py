@@ -175,23 +175,11 @@ class CoverLetterGenerator:
         during the probe (caller should fall through to the
         template-letter path).
 
-        Provider cascade priority (re-ordered 2026-06-29 to match the
-        project-wide LLM weights: opencode_zen → nvidia → groq →
-        openrouter → gemini).  OpenCode Zen is primary because the
-        ``deepseek-v4-flash-free`` free-tier model has zero cost while
-        still emitting enough reasoning budget for the cover-letter
-        JSON schema (max_tokens=4096 — already wired in LLMScorer).
-        NVIDIA is the high-quality 200K-context fallback and groq is the
-        fastest paid fallback once healthy.
-        ``openrouter`` and ``gemini`` stay as last-ditch paths.
+        Provider cascade priority (updated 2026-09-23 to match
+        PROVIDER_WEIGHTS): gemini → nvidia → groq → openrouter →
+        opencode_zen (key expired).
         """
-        name_fn: dict[str, Callable[[str], str | None]] = {
-            "opencode_zen": self._call_opencode_zen,
-            "nvidia": self._call_nvidia,
-            "groq": self._call_groq,
-            "openrouter": self._call_openrouter,
-            "gemini": self._call_gemini,
-        }
+        name_fn = self._provider_cascade()
 
         for name, fn in name_fn.items():
             try:
@@ -209,8 +197,54 @@ class CoverLetterGenerator:
         )
         return None, None
 
+    def _provider_cascade(self) -> dict[str, Callable[[str], str | None]]:
+        """The provider cascade, in priority order."""
+        return {
+            "gemini": self._call_gemini,
+            "nvidia": self._call_nvidia,
+            "groq": self._call_groq,
+            "openrouter": self._call_openrouter,
+            "opencode_zen": self._call_opencode_zen,
+        }
+
+    def _demote_provider(self, failed_name: str | None) -> tuple[str | None, Callable[[str], str | None]] | tuple[None, None]:
+        """Return the first provider *after* ``failed_name`` that answers a probe.
+
+        Called when the pinned provider returns ``None`` mid-run — almost
+        always a 429 rather than a bad key.  Previously any empty response
+        dropped straight to the template, so a single provider getting
+        rate-limited turned every remaining letter in the batch into a
+        generic template.  This walks the rest of the cascade instead.
+        """
+        if failed_name is None:
+            return self._resolve_provider()
+
+        cascade = self._provider_cascade()
+        names = list(cascade)
+        try:
+            idx = names.index(failed_name) + 1
+        except ValueError:
+            return self._resolve_provider()
+
+        for name in names[idx:]:
+            fn = cascade[name]
+            try:
+                result = fn("Reply with just the word OK.")
+                if result is not None and result.strip():
+                    log.info("Cover letter demoted %s → %s after an empty response",
+                             failed_name, name)
+                    return name, fn
+            except Exception as exc:
+                log.warning("Cover letter probe %s failed: %s", name, exc)
+
+        log.warning(
+            "Cover letter cascade exhausted after %s — no healthy provider "
+            "left, subsequent letters will use the template.", failed_name
+        )
+        return None, None
+
     def _call_opencode_zen(self, prompt: str) -> str | None:
-        # Primary: ``hy3-free`` (OpenCode Zen, 2026-07-12); falls back to
+        # Primary: ``mimo-v2.5-free`` (OpenCode Zen, 2026-08-30); falls back to
         # ``deepseek-v4-flash-free`` if it errors.  The paid-model pair
         # ``deepseek-v4-flash`` and ``deepseek-v4-pro`` both return HTTP 401
         # because the workspace ``wrk_01KRNSES9FY5ACEMK78BKAC1QY`` is empty
@@ -235,7 +269,7 @@ class CoverLetterGenerator:
         # ``temperature=0.3`` matches the research-agent tier and the
         # scorer's reasoning budget — cover letters should be precise
         # and grounded rather than creative.
-        for model in ("hy3-free", "deepseek-v4-flash-free"):
+        for model in ("mimo-v2.5-free", "deepseek-v4-flash-free"):
             try:
                 resp = httpx.post(
                     "https://opencode.ai/zen/v1/chat/completions",
@@ -527,9 +561,27 @@ class CoverLetterGenerator:
                 )
             else:
                 log.warning(
-                    "LLM (%s) returned empty for %s — using template fallback",
+                    "LLM (%s) returned empty for %s — trying next provider",
                     provider_name, job.get("school_name", job.get("title", "?")),
                 )
+                # A rate limit (429) on the pinned provider must not send every
+                # remaining letter in the batch to the template.  Demote to
+                # the next healthy provider and retry this same letter.
+                provider_name, fn = self._demote_provider(provider_name)
+                self._llm_provider = (provider_name, fn)
+                if fn is not None:
+                    letter = fn(prompt)
+                    if letter is not None:
+                        letter = letter.strip()
+                    if letter:
+                        short = self.PROVIDER_SHORT_CODE.get(provider_name or "", "?")
+                        source = f"LLM_{short}"
+                        log.info(
+                            "LLM %s generated for %s via %s (after demotion) → tag %s",
+                            "speculative email" if speculative else "cover letter",
+                            job.get("school_name", job.get("title", "?")),
+                            provider_name, source,
+                        )
 
         if not letter:
             if speculative:

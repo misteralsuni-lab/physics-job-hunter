@@ -140,7 +140,7 @@ def send_telegram_alert(
             )
             _send_document(chat_id, paths[url], caption)
 
-        return sent
+    return sent
 
 
 def send_campaign_digest(

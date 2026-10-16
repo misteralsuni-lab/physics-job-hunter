@@ -24,6 +24,22 @@ create index if not exists idx_job_listings_notified on job_listings(notified);
 create index if not exists idx_job_listings_source on job_listings(source);
 create index if not exists idx_job_listings_created on job_listings(created_at);
 
+-- ---------------------------------------------------------------------------
+-- last_seen: when the posting was last present on its source board.
+--
+-- Distinct from created_at (first time we ever saw it).  A posting can sit on
+-- TES for months with the same URL; last_seen is what lets us tell "still
+-- listed" from "vanished from the board", which is the only real proxy for
+-- "applications closed" available — 96% of rows have closing_date IS NULL and
+-- TES's payload carries no date field at all.
+--
+-- Safe to re-run.  src/storage/supabase_client.py:upsert_jobs() retries
+-- without this column if it is absent, so the pipeline keeps working either
+-- way.
+-- ---------------------------------------------------------------------------
+alter table job_listings add column if not exists last_seen timestamptz default now();
+create index if not exists idx_job_listings_last_seen on job_listings(last_seen);
+
 -- ===========================================================================
 -- Campaign prospecting store (proactive target-school discovery)
 -- Mirrors the job_listings workflow but is vacancy-independent. Schools are

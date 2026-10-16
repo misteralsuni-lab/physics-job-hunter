@@ -24,7 +24,31 @@ class DipontScraper(BaseScraper):
         seen_urls: set[str] = set()
 
         soup = self.fetch("/careers/independent-schools-jobs/")
+
+        # Recon 2026-10-01: this page is NOT a job board. It is a WordPress
+        # page built with Divi (``et_pb_*`` classes) containing navigation and
+        # marketing copy only — zero job cards, and the only job-ish links are
+        # the site's own Careers menu items.  The four original selectors
+        # (``div.job-item``, ``article.career``, ``div.vacancy``,
+        # ``.career-listing__item``) all match 0 elements and always have.
+        #
+        # Vacancies live on partner schools' own sites, linked from this page.
+        # Of the five partners, three are dead (huaercollegiate.com does not
+        # resolve, rkcshz.cn times out, dipont-hc.com returns 0 bytes) and the
+        # two that respond publish no individual listings either — one links
+        # only to a login portal (kcschengdu.intapply.cn) and the other only
+        # to ``mailto:recruitment@``.
+        #
+        # So there is nothing to extract here without per-partner bespoke
+        # scrapers for sites that do not publish vacancies. The fetch is kept
+        # (one cheap request) so that Dipont adding a real board is noticed.
         jobs = self._extract_jobs(soup)
+        if not jobs:
+            log.warning(
+                "[dipont] 0 listings — this page is a consultancy landing page, "
+                "not a job board (recon 2026-10-01); partner schools publish no "
+                "individual vacancies. Skipping."
+            )
 
         for j in jobs:
             url = j.get("url", "")

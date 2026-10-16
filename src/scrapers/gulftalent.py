@@ -50,8 +50,12 @@ from __future__ import annotations
 
 import json
 import logging
+import time
 from typing import Any
 
+import httpx
+
+from src.config import settings
 from src.scrapers.base import BaseScraper
 
 log = logging.getLogger(__name__)
@@ -60,6 +64,38 @@ log = logging.getLogger(__name__)
 _SEARCH_PATH = "/api/jobs/search"
 _DEFAULT_PAGE_SIZE = 5
 _MAX_PAGES = 10
+
+# Cloudflare fronts this JSON API and answers 403 + "Just a moment..."
+# unless the request looks like the site's own XHR.  Verified 2026-10-01 by
+# probing header combinations against the live endpoint:
+#
+#   BaseScraper.HEADERS (Accept: text/html)          -> 403
+#   + Accept: application/json                        -> 403
+#   + Referer + Origin                                 -> 403
+#   + Accept: application/json, text/plain, */*
+#     + X-Requested-With: XMLHttpRequest                -> 200  (real JSON)
+#
+# ``X-Requested-With`` is the decisive header.  These are deliberately
+# scoped to this scraper rather than added to BaseScraper — they describe a
+# JSON XHR endpoint, not an HTML page fetch, and the other ten scrapers must
+# keep presenting as ordinary browser page loads.
+API_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+    ),
+    "Accept": "application/json, text/plain, */*",
+    "Accept-Language": "en-GB,en;q=0.9",
+    "Referer": "https://www.gulftalent.com/jobs/search",
+    "Origin": "https://www.gulftalent.com",
+    "X-Requested-With": "XMLHttpRequest",
+}
+
+# Cloudflare challenges intermittently even with the correct headers — bursts
+# of requests reliably trip it.  Pace between keywords and retry a challenged
+# request once after a pause.
+POLITE_DELAY = 1.5
+CHALLENGE_BACKOFF = 4.0
 
 # Gulf Cooperation Council country mask — confirmed via probe of
 # https://www.gulftalent.com/jobs/search?country=10111111000000 on 2026-06-28.
@@ -70,6 +106,18 @@ _MAX_PAGES = 10
 # is reproducible.
 import os as _os
 _GCC_MASK = _os.environ.get("GT_COUNTRY_MASK") or "10111111000000"
+
+# Titles indicating an actual teaching post.  The board's taxonomy is
+# corporate Gulf employment with no education category, so a "physics"
+# search is dominated by medical physicists, engineers and analysts.  This
+# is used for *logging only* -- the pipeline's hard pre-filter remains the
+# authority on what survives, and _shape_job never pre-tags a subject.
+_TEACHING_HINTS = ("teach", "school", "educat", "instructor", "tutor", "lectur")
+
+
+def _looks_teaching(position: dict[str, Any]) -> bool:
+    title = (position.get("title") or "").lower()
+    return any(hint in title for hint in _TEACHING_HINTS)
 
 
 class GulfTalentScraper(BaseScraper):
@@ -82,14 +130,38 @@ class GulfTalentScraper(BaseScraper):
     # full-text matcher (e.g. ``physics teacher igcse``).  Add broader
     # terms only if the operator believes Gulf corporate L&D / trainer
     # roles are worth surfacing.
+    # Trimmed from six terms to two on 2026-10-01: the other four cost
+    # roughly 3x the request count and contributed nothing, because the
+    # phrases most likely to draw a Cloudflare challenge were the ones that
+    # returned least.  Request budget matters more than coverage here.
     KEYWORDS: tuple[str, ...] = (
         "physics teacher IGCSE",
-        "physics teacher A-Level",
-        "maths teacher IGCSE",
-        "secondary physics",
         "IGCSE physics",
-        "A-Level physics",
     )
+
+    def __init__(self):
+        super().__init__()
+        # This endpoint needs XHR-shaped headers, not the HTML defaults.
+        self.client.headers.update(API_HEADERS)
+
+    def run(self, search_terms: list[str] | None = None) -> list[dict[str, Any]]:
+        """Use this board's own keyword set.
+
+        ``BaseScraper.run()`` injects a generic default list
+        (``["Physics", "IGCSE Physics", "A-Level Physics"]``) whenever
+        ``search_terms`` is None, which meant ``KEYWORDS`` below was dead
+        code — every run sent the generic set and the carefully chosen
+        subject+curriculum phrases never fired.  Overridden here so the
+        targeted set is actually used.
+        """
+        if not settings.gt_enabled:
+            log.info(
+                "[gulftalent] disabled (GT_ENABLED=0) - Cloudflare throttles "
+                "this API and measured teaching yield is zero; set GT_ENABLED=1 "
+                "to opt back in."
+            )
+            return []
+        return self.scrape(None)
 
     def scrape(self, search_terms: list[str] | None = None) -> list[dict[str, Any]]:
         all_jobs: list[dict[str, Any]] = []
@@ -110,7 +182,9 @@ class GulfTalentScraper(BaseScraper):
                 )
                 continue
 
-            log.info("  gulftalent term=%r  → %d positions", term, len(positions))
+            teaching = sum(1 for p in positions if _looks_teaching(p))
+            log.info("  gulftalent term=%r  → %d positions (%d teaching-related)",
+                     term, len(positions), teaching)
 
             for p in positions:
                 pid = p.get("id")
@@ -120,6 +194,8 @@ class GulfTalentScraper(BaseScraper):
                 job = self._shape_job(p)
                 if job is not None:
                     all_jobs.append(job)
+
+            time.sleep(POLITE_DELAY)
 
         return all_jobs
 
@@ -142,30 +218,63 @@ class GulfTalentScraper(BaseScraper):
                 "country": _GCC_MASK,
                 "page": page,
             }
-            response = self.client.get(_SEARCH_PATH, params=params)
-            response.raise_for_status()
-            try:
-                payload = response.json()
-            except json.JSONDecodeError as exc:
-                log.warning(
-                    "[gulftalent] non-JSON payload for %s page %d: %s",
-                    keyword, page, exc,
-                )
+            response = self._get_json(params, keyword)
+            if response is None:
                 break
 
-            positions = (
-                payload.get("positions", []) if isinstance(payload, dict) else []
-            )
+            positions = response.get("positions", []) if isinstance(response, dict) else []
             if not positions:
                 break
             aggregated.extend(positions)
 
-            total = payload.get("total_results") if isinstance(payload, dict) else None
+            total = response.get("total_results") if isinstance(response, dict) else None
             # Stop early once we've captured everything the site knows about.
             if total is not None and len(aggregated) >= total:
                 break
 
+            time.sleep(POLITE_DELAY)
+
         return aggregated
+
+    def _get_json(self, params: dict[str, Any], keyword: str) -> dict[str, Any] | None:
+        """GET the search API, retrying once if Cloudflare challenges us.
+
+        A 403 with an HTML body is a challenge, not an API error.  It fires
+        intermittently even with correct headers — a burst of five back-to-back
+        requests triggers it reliably — so a single retry after a pause is
+        usually enough.  Returns None on a challenge that survives the retry,
+        or on any non-JSON response.
+        """
+        for attempt in (1, 2):
+            try:
+                response = self.client.get(_SEARCH_PATH, params=params)
+            except Exception as exc:
+                log.warning("[gulftalent] request error for %r: %s", keyword, exc)
+                return None
+
+            if response.status_code == 200:
+                ctype = response.headers.get("content-type", "")
+                if "json" in ctype:
+                    try:
+                        return response.json()
+                    except json.JSONDecodeError as exc:
+                        log.warning("[gulftalent] non-JSON body for %r: %s", keyword, exc)
+                        return None
+                log.warning("[gulftalent] 200 with content-type %r for %r", ctype, keyword)
+                return None
+
+            if response.status_code == 403 and attempt == 1:
+                log.info("[gulftalent] Cloudflare challenge on %r — backing off %.1fs",
+                         keyword, CHALLENGE_BACKOFF)
+                time.sleep(CHALLENGE_BACKOFF)
+                continue
+
+            raise httpx.HTTPStatusError(
+                f"{response.status_code} for {keyword}",
+                request=response.request, response=response,
+            )
+
+        return None
 
     # ------------------------------------------------------------------
     #  Schema mapping  →  pipeline contract

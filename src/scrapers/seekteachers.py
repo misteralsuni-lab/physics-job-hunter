@@ -9,8 +9,17 @@ from src.scrapers.base import BaseScraper
 
 log = logging.getLogger(__name__)
 
-MAX_PAGES_PER_COUNTRY = 10
-MAX_PAGES_TOTAL = 60
+# Per-country ceiling.  Measured 2026-09-30: with `keyword=physics`, country 17
+# exhausts at page 5, UAE at page 14, and the largest country was still
+# returning 20 fresh listings per page at page 30 — so the previous cap of 10
+# truncated every country short of its tail.
+MAX_PAGES_PER_COUNTRY = 20
+
+# Global ceiling across all countries.  At 20/country with 6 target countries
+# this is a backstop, not the binding constraint: the two smallest countries
+# exhaust early and release budget back to the others.
+MAX_PAGES_TOTAL = 120
+
 POLITE_DELAY = 0.5
 
 # SeekTeachers country names -> profile.json target_countries names.
@@ -65,28 +74,62 @@ class SeekTeachersScraper(BaseScraper):
         all_jobs = []
         seen_urls: set[str] = set()
         total_pages = 0
+        pages_done: dict[str, int] = {cid: 0 for cid in selected}
+        stopped_at: dict[str, str] = {}
 
-        for country_id, name in selected.items():
-            if total_pages >= MAX_PAGES_TOTAL:
-                log.warning("[seekteachers] global page cap (%d) reached", MAX_PAGES_TOTAL)
-                break
+        # Round-robin across countries rather than draining them one at a
+        # time.  Under a global page budget the old sequential loop let the
+        # first country consume the entire allowance, starving the rest —
+        # discovery order put the largest board first, so every later country
+        # got whatever was left over.  Interleaving guarantees every country
+        # progresses in step, and countries that exhaust early (17 at page 5,
+        # UAE at 14) hand their remaining budget straight back to the others.
+        cursors = {cid: 1 for cid in selected}
+        active = set(selected)
 
-            for page_num in range(1, MAX_PAGES_PER_COUNTRY + 1):
+        while active and total_pages < MAX_PAGES_TOTAL:
+            for country_id in sorted(active):
+                if total_pages >= MAX_PAGES_TOTAL:
+                    break
+                page_num = cursors[country_id]
+
                 params = {"keyword": "physics", "country_id": country_id}
                 if page_num > 1:
                     params["page"] = page_num
                 path = f"/jobs.asp?{urlencode(params)}"
-                soup = self.fetch(path)
+                # A transient timeout must not abort the whole board — one
+                # bad page used to raise out of scrape() and return zero
+                # jobs for every country. Retry the page, then skip it and
+                # carry on if it still fails.
+                try:
+                    soup = self.fetch_with_retry(path)
+                except Exception as exc:
+                    log.warning(
+                        "[seekteachers] giving up on %s (%s) — skipping this page",
+                        path, exc,
+                    )
+                    active.discard(country_id)
+                    stopped_at[country_id] = f"page {page_num} failed: {type(exc).__name__}"
+                    break
                 total_pages += 1
+                pages_done[country_id] += 1
 
-                jobs = self._extract_jobs(soup, country_id, name)
+                jobs = self._extract_jobs(soup, country_id, selected[country_id])
                 if not jobs:
                     if page_num == 1:
+                        # Only page 1 being empty is suspicious. Past page 1 an
+                        # empty result is simply how the board ends — the
+                        # previous run reported every country's normal
+                        # exhaustion as "possible DOM drift".
                         log.warning(
-                            "[seekteachers] 0 job cards on %s — possible DOM drift",
-                            path,
+                            "[seekteachers] 0 job cards on page 1 for %s — possible DOM drift",
+                            selected[country_id],
                         )
-                    break
+                        stopped_at[country_id] = "no job cards on page 1 (DOM drift?)"
+                    else:
+                        stopped_at[country_id] = f"listing exhausted at page {page_num}"
+                    active.discard(country_id)
+                    continue
 
                 new_on_page = 0
                 for j in jobs:
@@ -99,9 +142,27 @@ class SeekTeachersScraper(BaseScraper):
                     new_on_page += 1
 
                 if new_on_page == 0:
-                    break
+                    stopped_at[country_id] = "listing exhausted"
+                    active.discard(country_id)
+                    continue
+
+                cursors[country_id] = page_num + 1
+                if page_num >= MAX_PAGES_PER_COUNTRY:
+                    stopped_at[country_id] = f"hit {MAX_PAGES_PER_COUNTRY}-page cap, listings still coming"
+                    active.discard(country_id)
 
                 time.sleep(POLITE_DELAY)
+
+        for country_id, name in sorted(selected.items(), key=lambda kv: kv[1]):
+            log.info(
+                "[seekteachers] %s: %d page(s) — %s",
+                name, pages_done[country_id],
+                stopped_at.get(country_id, "not reached"),
+            )
+        log.info(
+            "[seekteachers] %d unique listing(s) from %d page(s) across %d country/countries",
+            len(all_jobs), total_pages, len(selected),
+        )
 
         return all_jobs
 

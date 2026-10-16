@@ -44,8 +44,56 @@ def _build_digest_html(jobs: list[dict[str, Any]]) -> str:
     """
 
 
+_PLACEHOLDER_FROM = {"job-hunter@yourdomain.com", ""}
+_PLACEHOLDER_TO = {"you@email.com", ""}
+_warned: set[str] = set()
+
+
+def email_status() -> tuple[bool, str]:
+    """Whether email can actually be sent, and if not, exactly what is missing.
+
+    ``EMAIL_PROVIDER`` being set is not evidence that email works.  The
+    2026-10-01 audit found ``EMAIL_PROVIDER=resend`` with an empty
+    ``RESEND_API_KEY`` and placeholder addresses (``you@email.com``) in
+    ``.env``, so every run logged "Email digest: skipped" while the config
+    implied a working digest channel.  Placeholder addresses are treated as
+    missing — adding a key alone would still deliver nowhere.
+    """
+    provider = (settings.email_provider or "").strip()
+    if not provider:
+        return False, "EMAIL_PROVIDER is unset — no email channel configured"
+
+    if settings.email_to.strip() in _PLACEHOLDER_TO:
+        return False, "EMAIL_TO is still a placeholder (you@email.com) — set your real address"
+    if settings.email_from.strip() in _PLACEHOLDER_FROM:
+        return False, "EMAIL_FROM is still a placeholder (job-hunter@yourdomain.com) — set a verified sender"
+
+    if provider == "resend":
+        if not settings.resend_api_key.strip():
+            return False, "EMAIL_PROVIDER=resend but RESEND_API_KEY is empty"
+        return True, "resend"
+    if provider == "smtp":
+        missing = [n for n, v in (
+            ("SMTP_HOST", settings.smtp_host),
+            ("SMTP_USER", settings.smtp_user),
+            ("SMTP_PASSWORD", settings.smtp_password),
+        ) if not v.strip()]
+        if missing:
+            return False, f"EMAIL_PROVIDER=smtp but {', '.join(missing)} not set"
+        return True, "smtp"
+    return False, f"EMAIL_PROVIDER={provider!r} is not a supported provider"
+
+
 def send_email_digest(jobs: list[dict[str, Any]]) -> bool:
     if not jobs:
+        return False
+
+    enabled, reason = email_status()
+    if not enabled:
+        # Log once per process, not once per job.
+        if reason not in _warned:
+            _warned.add(reason)
+            log.warning("Email digest not sent — %s. Telegram alerts are unaffected.", reason)
         return False
 
     html = _build_digest_html(jobs)

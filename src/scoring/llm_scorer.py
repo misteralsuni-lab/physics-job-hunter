@@ -1,15 +1,18 @@
 import json
 import logging
 import re
+import sqlite3
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, date
+from pathlib import Path
 from typing import Any, Callable
 
 import httpx
 from tenacity import Retrying, wait_random_exponential, stop_after_attempt
 
 from src.config import settings
+from src.storage.dedup_store import DB_PATH
 
 log = logging.getLogger("scoring")
 
@@ -27,16 +30,16 @@ DEADLINE_WITHIN_30_DAYS = 5
 
 # Provider RPM weights (higher = more capacity share).
 # Re-ordered 2026-06-29 so OpenCode Zen (free tier deepseek-v4-flash-free)
-# is PRIMARY, NVIDIA Nemotron-3-Super + GPT-OSS-120B is SECONDARY, and
-# Groq is TERTIARY.  The reasoning: the free tier is cheap, NVIDIA's
-# thinking-mode models add tokens of latency and Gemini/OpenRouter are
-# the historically-most-cooldowned providers in this codebase.
+# Provider weight registry — higher weight = tried first during cascade.
+# Gemini is PRIMARY (most reliable free tier), NVIDIA Nemotron-3-Super is
+# SECONDARY (high-quality 200K-context), Groq is TERTIARY (fastest paid
+# fallback).  OpenRouter often rate-limited; OpenCode Zen key expired.
 PROVIDER_WEIGHTS: dict[str, int] = {
-    "opencode_zen": 40,
+    "gemini": 40,
     "nvidia": 30,
     "groq": 20,
     "openrouter": 15,
-    "gemini": 10,
+    "opencode_zen": 5,
 }
 
 JOB_SCORING_PROMPT = """\
@@ -103,6 +106,84 @@ class ProviderConfig:
     batch_fn: Callable[[str, int], list[dict] | None] | None = None  # fn(prompt, expected) -> list|None
     key_configured: bool = True        # False when API key is empty / missing
     weight: int = 10
+
+
+class ProviderHealth:
+    """Persistent record of per-provider probe verdicts.
+
+    Without this, every pipeline run re-probed all five providers from
+    scratch.  Two of them (OpenCode Zen with an expired key, OpenRouter
+    persistently rate-limited) answered 403/429 on every single run, costing
+    ~3s of doomed HTTP per run, 9 runs a day, plus a misleading
+    ``[CONFIG_INVALID]`` line in the log that implied a config bug rather
+    than a transient limit.
+
+    Verdicts older than ``VALIDITY_SECS`` are ignored so a provider that was
+    rate-limited overnight gets re-probed later rather than being written
+    off for good.  Stored in the same SQLite file as the dedup store so it
+    needs no extra infrastructure.
+    """
+
+    VALIDITY_SECS = 24 * 60 * 60  # re-probe a dead verdict after 24h
+
+    def __init__(self, db_path: str | Path = DB_PATH):
+        self._conn = sqlite3.connect(str(db_path))
+        self._conn.execute("""
+            CREATE TABLE IF NOT EXISTS provider_health (
+                provider    TEXT PRIMARY KEY,
+                verdict     TEXT NOT NULL,
+                http_status INTEGER,
+                checked_at  TEXT NOT NULL DEFAULT (datetime('now'))
+            )
+        """)
+        self._conn.commit()
+
+    def cached_verdict(self, name: str) -> str | None:
+        """Return the recorded verdict if it is still fresh, else None."""
+        row = self._conn.execute(
+            "SELECT verdict, checked_at FROM provider_health WHERE provider = ?", (name,)
+        ).fetchone()
+        if not row:
+            return None
+        verdict, checked_at = row
+        try:
+            age = datetime.now() - datetime.fromisoformat(checked_at)
+        except (TypeError, ValueError):
+            return None
+        if age.total_seconds() > self.VALIDITY_SECS:
+            return None  # stale — force a fresh probe
+        return verdict
+
+    def record(self, name: str, verdict: str, http_status: int | None = None) -> None:
+        self._conn.execute(
+            """INSERT INTO provider_health (provider, verdict, http_status, checked_at)
+               VALUES (?, ?, ?, datetime('now'))
+               ON CONFLICT(provider) DO UPDATE SET
+                 verdict = excluded.verdict,
+                 http_status = excluded.http_status,
+                 checked_at = excluded.checked_at""",
+            (name, verdict, http_status),
+        )
+        self._conn.commit()
+
+    def known_dead(self) -> list[tuple[str, str | None, str]]:
+        """Diagnostics: (provider, verdict, checked_at) for every row."""
+        return self._conn.execute(
+            "SELECT provider, http_status, checked_at FROM provider_health"
+        ).fetchall()
+
+    def clear(self, name: str | None = None) -> None:
+        if name:
+            self._conn.execute("DELETE FROM provider_health WHERE provider = ?", (name,))
+        else:
+            self._conn.execute("DELETE FROM provider_health")
+        self._conn.commit()
+
+    def close(self) -> None:
+        self._conn.close()
+
+
+_provider_health = ProviderHealth()
 
 
 class ProviderRegistry:
@@ -177,6 +258,18 @@ class ProviderRegistry:
     def record_success(self, name: str):
         """Reset failure count for *name*."""
         self._failures[name] = 0
+
+    def record_dead(self, name: str):
+        """Permanently remove *name* from rotation for this session.
+
+        Used when validation proves the key/endpoint is wrong (config_invalid)
+        rather than merely rate-limited.  A permanently-dead provider can never
+        pass a canary, so parking it in COOLING_DOWN would invite pointless
+        probes every cooldown window.
+        """
+        self._state[name] = "DEAD"
+        self._failures[name] = 0
+        log.info("Provider %s → DEAD (removed from rotation)", name)
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -288,7 +381,7 @@ class LLMScorer:
     # ------------------------------------------------------------------
     #  validate_provider_configs() — No-Dead-End Rule
     #  Probes each provider once. On 404/401, the provider's own method
-    #  handles backup models (e.g., NVIDIA tries openai/gpt-oss-120b,
+    #  handles backup models (e.g., NVIDIA tries nemotron-3-super-120b-a12b,
     #  OpenCode Zen tries deepseek-v4-pro). If all models for a provider fail,
     #  the provider is removed from rotation for this session.
     # ------------------------------------------------------------------
@@ -296,6 +389,15 @@ class LLMScorer:
     # ------------------------------------------------------------------
     #  Probe map — one-shot calls for validation (no tenacity retries)
     # ------------------------------------------------------------------
+
+    # HTTP statuses that mean "this key/endpoint is wrong, stop asking".
+    # 403 is included because every provider endpoint here is key-scoped:
+    # OpenCode Zen and OpenRouter both answer 403 for an invalid key.
+    # 410 Gone and 451 Unavailable For Legal Reasons are permanent removals
+    # (no forwarding address) — retrying them is pointless, so they are
+    # config-invalid rather than transient.  OpenCode Zen's endpoint answers
+    # 410 once its free tier is withdrawn.
+    _CONFIG_INVALID_STATUS = frozenset({401, 403, 404, 410, 451})
 
     def _probe_once(self, name: str, prompt: str) -> dict | None:
         """Single-shot probe without retries, for ``validate_provider_configs``."""
@@ -319,8 +421,58 @@ class LLMScorer:
             return self._call_gemini("gemini-2.5-flash", prompt)
         return None
 
+    def _probe_verdict(self, name: str, prompt: str) -> tuple[str, int | None]:
+        """Probe *name* and classify the outcome.
+
+        Returns ``(verdict, http_status)`` where verdict is one of:
+
+        ``"ok"``
+            Provider answered with a parseable score.
+        ``"config_invalid"``
+            The key or endpoint is wrong (401/403/404).  Retrying within the
+            run is pointless, so the provider is dropped from rotation.
+        ``"transient"``
+            Rate limit, 5xx, timeout, connection error, or an unparseable
+            body.  The provider is probably fine and must stay in rotation.
+
+        This distinction is load-bearing.  ``_call_gemini`` *raises* on 429
+        while returning ``None`` for an empty/unparseable body, and every
+        other ``_call_*`` uses ``raise_for_status``.  The previous
+        implementation caught all of these with a bare ``except Exception``
+        and collapsed them to a single ``[CONFIG_INVALID]`` outcome — which
+        meant a provider being momentarily rate-limited was thrown out of
+        rotation for the rest of the run.  Gemini, which successfully
+        batch-scored jobs hours earlier, was discarded this way.
+        """
+        try:
+            result = self._probe_once(name, prompt)
+        except httpx.HTTPStatusError as exc:
+            status = exc.response.status_code
+            if status in self._CONFIG_INVALID_STATUS:
+                return "config_invalid", status
+            # 429 / 5xx — rate limited or upstream trouble.
+            return "transient", status
+        except (httpx.TimeoutException, httpx.TransportError) as exc:
+            log.warning("  ! %s probe transport error: %s", name, exc)
+            return "transient", None
+        except Exception as exc:
+            # A crash in parsing/prompting says nothing about the key.
+            log.warning("  ! %s probe raised %s: %s", name, type(exc).__name__, exc)
+            return "transient", None
+
+        if result is not None and result.get("score") is not None:
+            return "ok", None
+        # Answered, but with nothing usable — a body we could not parse.
+        return "transient", None
+
     def validate_provider_configs(self) -> None:
-        """Probe every registered provider once. Remove permanently dead ones."""
+        """Probe every registered provider once.
+
+        Permanently-dead providers (bad key / wrong endpoint) are removed
+        from rotation and their verdict persisted so the next run does not
+        re-probe them.  Providers that merely rate-limited or hiccuped stay
+        registered but start in COOLING_DOWN.
+        """
         deadline = time.monotonic() + 120  # total 2-minute budget across all providers
         still_alive: list[tuple[str, Callable, Callable | None]] = []
 
@@ -328,6 +480,14 @@ class LLMScorer:
             if time.monotonic() >= deadline:
                 log.warning("Validation deadline exceeded — keeping %s as-is", name)
                 still_alive.append((name, single_fn, batch_fn))
+                continue
+
+            cached = _provider_health.cached_verdict(name)
+            if cached == "config_invalid":
+                log.info("  ✗ %s known CONFIG_INVALID (cached) — skipping probe", name)
+                # Mark it in the registry too, otherwise the startup summary
+                # reports a dropped provider as ACTIVE.
+                self._registry.record_dead(name)
                 continue
 
             log.info("Validating provider %s ...", name)
@@ -341,18 +501,21 @@ class LLMScorer:
                 job=json.dumps(compressed, indent=2),
             )
 
-            try:
-                result = self._probe_once(name, probe_prompt)
-            except Exception:
-                result = None
+            verdict, status = self._probe_verdict(name, probe_prompt)
+            _provider_health.record(name, verdict, status)
 
-            if result is not None and result.get("score") is not None:
+            if verdict == "ok":
                 self._registry.record_success(name)
                 still_alive.append((name, single_fn, batch_fn))
-                log.info("  ✓ %s validated successfully (score=%s)", name, result["score"])
+            elif verdict == "config_invalid":
+                log.warning("  ✗ %s failed validation — removing from rotation [CONFIG_INVALID, HTTP %s]",
+                            name, status)
+                self._registry.record_dead(name)
             else:
-                log.warning("  ✗ %s failed validation — removing from rotation [CONFIG_INVALID]", name)
+                # Keep it. A rate-limited provider is a working provider.
+                log.warning("  ! %s probe failed transiently — keeping in rotation on cooldown", name)
                 self._registry.record_failure(name)
+                still_alive.append((name, single_fn, batch_fn))
 
         self._providers = still_alive
 
@@ -539,6 +702,19 @@ class LLMScorer:
             scored = self._try_batch(chunk)
             if scored is None:
                 scored = [self.score(j) for j in chunk]
+            elif len(scored) != len(chunk):
+                # Defence in depth: no provider may shorten the list, even
+                # one that returns an array of the *wrong* length rather than
+                # a bare object.  Backfill the missing tail individually so a
+                # short response can never leave a job permanently unscored
+                # (that bug stranded jobs at score=null forever, because the
+                # caller zipped the results against the chunk).
+                log.warning(
+                    "Batch returned %d result(s) for a chunk of %d — backfilling %d individually",
+                    len(scored), len(chunk), len(chunk) - len(scored),
+                )
+                for i in range(len(scored), len(chunk)):
+                    scored.append(self.score(chunk[i]))
 
             results.extend(scored)
 
@@ -590,9 +766,9 @@ class LLMScorer:
 
     GROQ_MODELS: list[str] = []
     NVIDIA_MODELS: list[str] = []
-    # Primary: hy3-free (OpenCode Zen). deepseek-v4-flash-free is the fallback
-    # if hy3-free is unavailable / errors (2026-07-12).
-    OPENCODE_MODELS: list[str] = ["hy3-free", "deepseek-v4-flash-free"]
+    # Primary: mimo-v2.5-free (OpenCode Zen). deepseek-v4-flash-free is the fallback
+    # if mimo-v2.5-free is unavailable / errors (2026-08-30).
+    OPENCODE_MODELS: list[str] = ["mimo-v2.5-free", "deepseek-v4-flash-free"]
 
     # ------------------------------------------------------------------
     #  _call_base — shared HTTP POST to any OpenAI-compatible endpoint
@@ -683,9 +859,12 @@ class LLMScorer:
             content = resp.json()["choices"][0]["message"]["content"]
             json_str = self._extract_json_array(content)
             if json_str is None:
-                json_str = self._extract_json(content)
-                if json_str:
-                    return [json.loads(json_str)]
+                # A bare object instead of an array is not a usable batch
+                # result.  Wrapping it as [obj] silently shortens the list,
+                # and the caller zips it against the chunk — so every job
+                # after the first is left permanently unscored.  Cascade
+                # instead so the per-job path scores them.
+                log.warning("Groq batch: expected a JSON array of %d, got a bare object — cascading", expected)
                 return None
             scores = json.loads(json_str)
             if isinstance(scores, dict):
@@ -710,7 +889,7 @@ class LLMScorer:
         """Call NVIDIA with *model*.
 
         Reasoning-mode headroom: both NVIDIA chain members
-        ([nvidia/nemotron-3-super-120b-a12b, openai/gpt-oss-120b])
+        ([nvidia/nemotron-3-super-120b-a12b, openai/gpt-oss-20b])
         emit a response that puts a meaningful fraction of the
         completion budget into ``reasoning_content`` chain-of-thought,
         so the default ``max_tokens=800`` returns ``content=""`` or a
@@ -776,9 +955,12 @@ class LLMScorer:
             content = resp.json()["choices"][0]["message"]["content"]
             json_str = self._extract_json_array(content)
             if json_str is None:
-                json_str = self._extract_json(content)
-                if json_str:
-                    return [json.loads(json_str)]
+                # A bare object instead of an array is not a usable batch
+                # result.  Wrapping it as [obj] silently shortens the list,
+                # and the caller zips it against the chunk — so every job
+                # after the first is left permanently unscored.  Cascade
+                # instead so the per-job path scores them.
+                log.warning("OpenRouter batch: expected a JSON array of %d, got a bare object — cascading", expected)
                 return None
             scores = json.loads(json_str)
             if isinstance(scores, dict):
@@ -864,9 +1046,12 @@ class LLMScorer:
             content = candidate["content"]["parts"][0]["text"]
             json_str = self._extract_json_array(content)
             if json_str is None:
-                json_str = self._extract_json(content)
-                if json_str:
-                    return [json.loads(json_str)]
+                # A bare object instead of an array is not a usable batch
+                # result.  Wrapping it as [obj] silently shortens the list,
+                # and the caller zips it against the chunk — so every job
+                # after the first is left permanently unscored.  Cascade
+                # instead so the per-job path scores them.
+                log.warning("Gemini batch: expected a JSON array of %d, got a bare object — cascading", expected)
                 return None
             scores = json.loads(json_str)
             if isinstance(scores, dict):
@@ -906,7 +1091,7 @@ class LLMScorer:
     def _batch_score_via_opencode_zen(self, prompt: str, expected: int) -> list[dict] | None:
         """Batch scoring via OpenCode Zen (single call, multi-job response).
 
-        Uses the first model in OPENCODE_MODELS (hy3-free, with
+        Uses the first model in OPENCODE_MODELS (mimo-v2.5-free, with
         deepseek-v4-flash-free as fallback) — see _try_models rotation.
         Reasoning-mode headroom: max_tokens=4096 so the model can finish
         its reasoning_content chain-of-thought and emit the visible JSON
@@ -957,10 +1142,12 @@ class LLMScorer:
             content = resp.json()["choices"][0]["message"]["content"]
             json_str = self._extract_json_array(content)
             if json_str is None:
-                json_str = self._extract_json(content)
-                if json_str:
-                    return [json.loads(json_str)]
-                log.warning("OpenCode Zen batch: could not extract JSON array from %r", content[:200])
+                # A bare object instead of an array is not a usable batch
+                # result.  Wrapping it as [obj] silently shortens the list,
+                # and the caller zips it against the chunk — so every job
+                # after the first is left permanently unscored.  Cascade
+                # instead so the per-job path scores them.
+                log.warning("OpenCode Zen batch: expected a JSON array of %d, got a bare object — cascading", expected)
                 return None
             scores = json.loads(json_str)
             if isinstance(scores, dict):

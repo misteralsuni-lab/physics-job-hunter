@@ -1,5 +1,23 @@
 # Physics Job Hunter — Agent Guide
 
+## Security & personal data (HARD RULE)
+
+**Never commit cover letters, CVs, profiles, applications, or any document
+containing personal information — the operator's or anyone else's.**
+
+- `data/cover_letters/`, `CV_*.html`, `cv_redesign*.py`, `apllications/`,
+  `data/profile.json`, `data/profile_tutoring.json`, personal interview/relocation
+  docs, `_pdfscan/`, `opencode export*.json`, and personal `.docx`/`.pptx` files
+  were untracked on 2026-10-16 (commit `e261522`) and are listed in `.gitignore`.
+- These files **remain on disk** — the pipeline reads and writes them locally.
+  Never `git add -f` them, never re-add them, and never paste their contents into
+  commits, code, docs, or logs.
+- Git history before 2026-10-16 still contains some of these files (already pushed
+  to GitHub). The cleanup was deliberately forward-only — do not rewrite history
+  unless the operator explicitly asks for it.
+- The pipeline writes new cover letters to `data/cover_letters/` at runtime; that
+  directory is ignored, so no commit should ever include it.
+
 ## Entrypoints
 
 - **CLI**: `physics-job-hunter` (needs `pip install -e .`) or `python3 -m src.main`
@@ -15,7 +33,7 @@
 
 ## Pipeline (`src/main.py:run_pipeline()`)
 
-1. **Scrape** — 10-scraper fleet registered in `src/main.py:run_scrapers()`:
+1. **Scrape** — 12-scraper fleet registered in `src/main.py:run_scrapers()`:
    - `TESScraper` (works)
    - `LibyanJobsScraper` (works)
    - `LinkedInScraper` (`curl_cffi` Chrome 120 fingerprint + hard `physics` pre-filter)
@@ -26,11 +44,13 @@
    - `TeacherHorizonsScraper` (Camoufox + cookie-resume auth — dormant unless `TH_EMAIL/TH_PASSWORD` set)
    - `GulfTalentScraper` (BaseScraper, no auth — corporate Gulf board; near-zero IGCSE/A-Level yield by design)
    - `SchroleScraper` (browser lane — awaiting credentials)
+   - `BSOTeachersScraper` (BaseScraper, no auth — Firefish/ASP.NET board for British International Schools; near-zero physics yield, coverage play; added 2026-08-14)
+   - `SeekTeachersScraper` (BaseScraper, no auth — agency board, `jobs.asp?keyword=physics` country-discovery + per-country crawl intersected with `profile.json` `target_countries`; `SEEK_COUNTRIES=all` bypass; added 2026-08-14)
 0. **Pre-flight (stealth verification)** — Before every scrape session, run `python3 stealth_browser.py`. It tests the Camoufox fingerprint against bot.sannysoft.com (the Intoli test suite). **If > 0 tests show FAIL, do not scrape** — investigate and fix the regression first. Any single failure means the fingerprint is compromised and scraping will likely hit CAPTCHAs/403s. See Stealth Browser Harness section below for details.
 1. **Heuristic pre-filter** — `filter_relevant_jobs()` drops jobs whose title/subject don't match physics/maths/science/IGCSE/A-Level keywords. The hard `physics in (title | subject | curriculum)` is the primary guard. Substring matchers block non-teacher roles (2026-06-29 expansion): technicians ("technician", "lab technician", "science technician", "stem technician"), management ("director of", "head of department", "head of physics", "manager", "coordinator", "administrator"), higher-ed ("lecturer", "university", "researcher", "postdoc", "professor"), lab roles ("physics lab", "physics laboratory"). Blocked jobs never reach the LLM scorer and never trigger Telegram notifications.
 3. **Deduplicate** — skip URLs already in Supabase (falls back to `DedupStore` SQLite at `data/dedup.db`)
 4. **Upsert** — `SupabaseClient.upsert_jobs()` into `job_listings` table; coerces empty `closing_date=""` → `None`
-5. **Score** — `LLMScorer` with Weighted Provider Registry: validates providers at startup via `validate_provider_configs()`, removes dead ones, queries survivors in weight order. Active providers (compare matrix, 2026-06-29 rerun): **OpenCode Zen** (weight 40, primary — `deepseek-v4-flash-free` free-tier via OpenCode Zen catalogue) → **NVIDIA** (30, primary model `openai/gpt-oss-120b` clean JSON, backup `nvidia/nemotron-3-super-120b-a12b` thinking-mode; 2026-06-30 swap puts GPT-OSS-120B first because Nemotron burned most of *its* completion budget on `reasoning_content` chain-of-thought — see NVIDIA reasoning-headroom fix below) → **Groq** (20, fastest when ACTIVE — `meta-llama/llama-4-scout-17b-16e-instruct` per `.env`) → **OpenRouter** (15, often cool-down rate-limited) → **Gemini** (10). `SCORER_PROVIDER`/`SCORER_FALLBACK` env vars are **not consumed** — provider selection = API key presence + `PROVIDER_WEIGHTS`. If all LLM providers fail, falls back to rule-based scoring (base 30). LLM rubric: Curriculum 0-30, Subject 0-25, Location 0-20, Salary 0-15, Housing 0-10 (max 100). `visa_sponsorship` and `deadline_urgency` removed. **Five-way comparison pass** (2026-06-29 live test against a canonical IGCSE-Physics job): PASS-1 OpenCode-primary → 90/18s, PASS-2 NVIDIA-primary → 95/23s, PASS-3 Gemini-primary → 90/16s, PASS-4 NVIDIA+OpenCode dual → 90/21s, PASS-5 ORIGINAL groq-primary (pre-ship) → 90/12.9s. Recommendation: **stay with PASS-1 OpenCode-primary** for steady-state — only 7s slower than Groq-primary when Groq is hot, but doesn't burn credits.
+5. **Score** — `LLMScorer` with Weighted Provider Registry: validates providers at startup via `validate_provider_configs()`, removes dead ones, queries survivors in weight order. Active providers: **Gemini** (weight 40, primary — `gemini-2.5-flash` free tier) → **NVIDIA** (30, primary `nvidia/nemotron-3-super-120b-a12b`, backup `openai/gpt-oss-20b`) → **Groq** (20, `openai/gpt-oss-120b` production model) → **OpenRouter** (15, often cool-down rate-limited) → **OpenCode Zen** (5, key expired — skipped). `SCORER_PROVIDER`/`SCORER_FALLBACK` env vars are **not consumed** — provider selection = API key presence + `PROVIDER_WEIGHTS`. If all LLM providers fail, falls back to rule-based scoring (base 30). LLM rubric: Curriculum 0-30, Subject 0-25, Location 0-20, Salary 0-15, Housing 0-10 (max 100). `visa_sponsorship` and `deadline_urgency` removed.
 6. **Research** — `ResearchAgent` produces a `StrategicBrief` for every job scored ≥ `RESEARCH_SCORE_THRESHOLD` (default 60). Uses a ReAct-style LLM loop with two tools: `web_search` (DuckDuckGo) and `deep_scrape` (Firecrawl or HTTP fallback). The brief feeds `institution_facts`, `strategic_alignment`, and `recommended_angle` into the cover letter generator. Falls back to `StrategicBrief.fallback()` if research fails.
 7. **Notify** — Telegram (`src/notify/telegram.py`) + Email (`src/notify/email_sender.py`, Resend or SMTP) for jobs scored ≥ `settings.notify_score_threshold` (default 50, configurable via `NOTIFY_SCORE_THRESHOLD` in `.env`)
 
@@ -88,15 +108,25 @@ env var, **without** touching the shared `profile.json` or any other branch.
 - **`StealthBrowserScraper` Screen type fix (2026-06-29)** — `_pick_screen()` returned a `tuple[int,int]` but `browserforge` expects a `Screen` dataclass (with `is_set()` method).  This caused `AttributeError: 'tuple' object has no attribute 'is_set'` on stealth launch.  Also, using `Screen(min_width=w, max_width=w, ...)` was too restrictive for the header generator — fixed by removing the `screen` param entirely from `_browser_session()` and the standalone `Camoufox(...)` calls in `teacher_horizons.py` and `search_associates.py`, letting Camoufox use its own default screen fingerprinting.
 - **GeoIP database** — `geoip=True` (default) triggers a 66MB GeoIP download on first Camoufox launch.  Cached at `~/.cache/camoufox/` for subsequent runs.  First run after clearing cache will be slow.  Set `geoip=False` (via `CAMOUFOX_GEOIP` env) to skip if geolocation anchoring isn't needed.
 - **`GulfTalentScraper` (2026-06-28)** — corporate Gulf employment board (`/api/jobs/search`, no auth).  After a second probe (GCC `country` mask `10111111000000` + combined subject + curriculum phrase), the search DOES return real teaching gigs in UAE/Saudi/Qatar/Bahrain/Oman/Kuwait — however, the keyword matcher is loose full-text and primary/homeroom dominates.  Scraper now defaults to `search_keyword=physics teacher IGCSE` and similar combined phrases + the GCC bitmask.  Expected IGCSE secondary match rate is **sparse but real**; corporate-Gulf pollution reduced vs. the unfiltered global search.  Overridable via `GT_COUNTRY_MASK` env var (set to empty string for unfiltered global search).
+- **`BSOTeachersScraper` (2026-08-14)** — Firefish Recruitment Software, ASP.NET WebForms, no auth. Bare GET of `/jobs.aspx` (no consent cookie, no session) returns the full board — verified, content is NOT gated behind the `__doPostBack` cookie banner. No RSS (`/jobs/rss.aspx` 301s back to `/jobs.aspx`); `sitemap.xml` lists all 43 job URLs in one request (unused optimization). Selectors: `div.job-result-item` cards, `a.card__title` (title+URL), `li.results-job-location` (raw "Europe, Poland" / "Middle East, Doha, Qatar"), `li.results-posted-at` (relative, not parsed). Listing-only — no detail fetches (no closing dates, no curriculum). Country = last comma segment, with `startswith("UAE")` special-case for "UAE - Abu Dhabi". Subject tagging = conservative literal-word rule (verbatim from `libyan_jobs.py`) plus whole-token `mathematics`/`maths` (the libyan `"math" in title.split()` trap misses "Mathematics Teacher"). WARNING log when a page yields 0 cards (Firefish commercial-DOM drift sentinel). Expected physics yield ~0 — coverage play for BSO-accredited British international schools.
 - **`health_check()` on `SupabaseClient`** — probes with `SELECT id LIMIT 1` at startup; if it fails, raises `httpx.HTTPError` immediately so the pipeline falls through to in-memory scoring with local SQLite
 - **`update_score()` and `mark_notified()` filter by `url` column** — NOT by `id`. Callers pass `_job_key(job)` which returns `job["id"]` (UUID) or falls back to `job["url"]`. `update_score` was broken (filtered `id=url`, silent no-op)
 - **`import re` must be in `src/scoring/llm_scorer.py`** — `_strip_llm_wrappers()` uses `re.sub`. If the import is missing, every provider validation fails silently (caught by `except Exception`). All providers return HTTP 200 but JSON extraction crashes with `NameError`
 - **`upsert_jobs()` coerces empty `closing_date=""` → `None`** — PostgreSQL refuses `""` for `date` type
 - **`get_recent()` ignores its `days` parameter** — always queries `>= date.today()`. Minor bug, but affects any code expecting a sliding window
-- **Provider validation** — `validate_provider_configs()` has a 2-minute deadline; probes with a real scoring prompt. On 401/404 logs `[CONFIG_INVALID]` and removes provider. On any other failure (including extraction crash) logs `[CONFIG_INVALID]`
-- **Health state machine** — `ProviderRegistry` tracks ACTIVE → COOLING_DOWN (300s canary) → DEAD (3 consecutive cooldown failures). Dead providers stay removed for the session
-- **Intra-provider model rotation** — Groq: 1 model (`settings.groq_model`). NVIDIA: `openai/gpt-oss-120b` (primary clean JSON, ~10s on real scoring prompt) → `nvidia/nemotron-3-super-120b-a12b` (backup, thinking-mode + 90s timeout — operator swap dated **2026-06-30**; previously Llama-3.1 70B/8B then Nemotron-3-Super primary). OpenCode Zen: **`["deepseek-v4-flash-free"]`** — the free tier via OpenCode Zen catalogue (added 2026-06-28 after the paid `deepseek-v4-flash` was blocked by 401 CreditsError; the scorer calls this with `max_tokens=4096` instead of the default 800 because reasoning-mode burns most of the budget on chain-of-thought, leaving 0 tokens for the visible answer at 800). OpenRouter/Gemini: 1 model each
-- **NVIDIA reasoning-headroom fix (2026-06-29)** — both NVIDIA chain members (`nvidia/nemotron-3-super-120b-a12b` and `openai/gpt-oss-120b`) put a meaningful fraction of the completion budget into `reasoning_content` chain-of-thought. The default `max_tokens=800` returns truncated (or empty) `content` for both, which is why the previous prompt failed _extract_json. The fix shipped 2026-06-29: `_call_nvidia` in `src/scoring/llm_scorer.py:699` now passes `max_tokens=4096`. Verified the same fix works for both models in `tutorials/test_nvidia_fix.py` — both models now hit `finish_reason=stop`, emit valid JSON, and parse cleanly via `_extract_json`. Cost: ~750 completion tokens per job (650 reasoning + 100 answer), <1 cent per job on the free NVIDIA catalogue tier. The pre-existing `NVIDIA_Nemotron-3-Super_hidden-reasoning issue` gotcha (older comment in the gotcha log) is no longer applicable once this fix lands.
+- **`target_countries` + Europe (2026-08-14)** — `data/profile.json` `target_countries` extended with `"Spain", "Poland", "Romania", "Germany"` (additive only; existing targets untouched) so BSOteachers.com's Europe cluster earns the `llm_scorer.py:1023` country-match bonus. Side effect: country bonus now applies to those countries for every scraper, not just BSO.
+- **`send_telegram_alert` early-return bug (2026-08-14)** — `return sent` was indented inside the `for job in jobs:` loop in `src/notify/telegram.py`, so only the FIRST top-scoring job ever received an alert message (subsequent jobs were silently dropped). Symptom: "Telegram: N alerts sent" where N=1 despite multiple jobs ≥ `notify_score_threshold` with generated cover letters. Fixed by dedenting to function level. Caught live on the first BSOteachers run (Doha 90/100 alerted, UAE-Abu-Dhabi 55/100 dropped).
+- **`SeekTeachersScraper` (2026-08-14; crawl depth + round-robin 2026-10-01)** — e-IT Solutions classic ASP agency board, robots `Allow: /`, no auth. `jobs.asp?keyword=physics` returns a country picker (`a[href*="keyword=physics&country_id="]`). The keyword matcher is LOOSE (a Humanities listing appears in a physics search), so the heuristic pre-filter remains the real guard. Country names canonicalised via `COUNTRY_ALIASES` and intersected with `profile.json` `target_countries`; `SEEK_COUNTRIES=all` sweeps all discovered countries.
+- **SeekTeachers crawl depth (2026-10-01)** — the old `MAX_PAGES_PER_COUNTRY = 10` / `MAX_PAGES_TOTAL = 60` pair truncated every country short of its tail (measured: country 17 exhausts at page 5, UAE at page 14, and the largest board was still returning 20 fresh listings per page at page 30). Worse, the **sequential** loop let the first country in discovery order consume the entire global budget, starving every later country — and discovery puts the largest board first. Crawl is now **round-robin** across countries (`cursors`/`active`/`stopped_at`), so each progresses in step and countries that exhaust early hand their budget back. Caps raised to 20/country and 120 total. Measured: **552 → 831 listings, 10 → 14 surviving the pre-filter, +4 new physics jobs, 0 regressions**, for ~85s vs ~60s. Note: an "empty page" past page 1 is normal exhaustion, not DOM drift — only page 1 being empty warns.
+
+- **Fleet-wide signature dedup (2026-08-14; window retuned 2026-09-30)** — `job_signature()` in `src/storage/dedup_store.py` = md5 of normalized `school|title|country`; stored in SQLite table `notified_signatures(signature, first_notified, first_url)`. **It is a notification gate, not a storage drop**: `send_notifications()` skips Telegram/email/cover-letter for jobs whose signature was recorded within the re-post TTL; jobs are still upserted/scored and appear on the dashboard. **The window is now `SIGNATURE_REPOST_TTL_DAYS = 30`, not 180.** The 180-day version suppressed a school+title for half a year and created a permanent deadlock: suppression keyed on signature alone, so a row the `notified` flag still reported as False could never alert again even after a failed `mark_notified` — 12 top-scoring vacancies (incl. a 100/100 Subject Leader of Physics, Dubai) were muted indefinitely. The `notified` column is the same-URL guard; this table exists solely to collapse the same vacancy advertised under several URLs. First deploy backfills from Supabase `notified=true` rows (via `SupabaseClient.get_notified_jobs()`); backfill only runs when `signature_count() == 0`.
+- **`--resend-notified` (2026-09-30)** — releases jobs muted by a signature block. Selects `notified=false AND score >= NOTIFY_SCORE_THRESHOLD`, deletes their signatures via `DedupStore.forget_signature()`, then calls `send_notifications(..., ignore_signatures=True)`. `--resend-min-score N` overrides the threshold. Use after a deliberate config change (e.g. shortening the TTL) to re-surface jobs that the old window silenced.
+- **`--force-notify` now actually forces (2026-09-30)** — `send_notifications()` takes `ignore_signatures: bool`; `--force-notify` passes `True`. Previously the flag bypassed the `notified` column but NOT the signature gate, so it could not re-alert a signature-suppressed job despite its help text. The signature backfill is also skipped when `ignore_signatures=True`.
+- **Provider validation (2026-09-30: typed verdicts)** — `validate_provider_configs()` has a 2-minute deadline; probes with a real scoring prompt. `_probe_verdict()` returns `(verdict, http_status)` where verdict is `ok` / `config_invalid` / `transient`. `config_invalid` = 401/403/404/410/451 (`_CONFIG_INVALID_STATUS`) → logged `[CONFIG_INVALID, HTTP nnn]` and recorded as DEAD (out of rotation). `transient` = 429/5xx/timeout/transport error/**unparseable body** → logged `probe failed transiently — keeping in rotation on cooldown`. **The previous bare `except Exception` collapsed both classes to `[CONFIG_INVALID]`, which meant a provider being momentarily rate-limited was thrown out of rotation for the whole run** — Gemini, which had batch-scored jobs hours earlier, was discarded this way on a 429. A crash in parsing says nothing about the key, so it is transient, not config.
+- **Health state machine** — `ProviderRegistry` tracks ACTIVE → COOLING_DOWN (300s canary) → DEAD (3 consecutive cooldown failures). A `config_invalid` verdict is recorded directly as DEAD via `record_dead()` — a permanently-dead endpoint can never pass a canary, so parking it in COOLING_DOWN would invite pointless probes. Dead providers stay removed for the session
+- **Persisted provider health (2026-09-30)** — `ProviderHealth` (`src/scoring/llm_scorer.py`, `data/dedup.db` table `provider_health(provider, verdict, http_status, checked_at)`) caches probe verdicts. A provider cached as `config_invalid` is skipped with **no HTTP request** (log: `known CONFIG_INVALID (cached) — skipping probe`); it also calls `record_dead()` so the startup summary reports the dropped provider as DEAD rather than ACTIVE or COOLING_DOWN. Verdicts older than `VALIDITY_SECS = 24h` are ignored so a provider rate-limited overnight is re-probed rather than written off. Previously every run re-probed all five providers, costing ~3s/run of doomed requests 9×/day. Clear with `ProviderHealth().clear()`.
+- **Intra-provider model rotation** — Groq: 1 model (`settings.groq_model`, default `openai/gpt-oss-120b`). NVIDIA: `nvidia/nemotron-3-super-120b-a12b` (primary) → `openai/gpt-oss-20b` (backup). OpenCode Zen: `["mimo-v2.5-free", "deepseek-v4-flash-free"]` (key expired — skipped). OpenRouter/Gemini: 1 model each
+- **NVIDIA reasoning-headroom fix (2026-06-29)** — both NVIDIA chain members (`nvidia/nemotron-3-super-120b-a12b` and `openai/gpt-oss-20b`) put a meaningful fraction of the completion budget into `reasoning_content` chain-of-thought. The default `max_tokens=800` returns truncated (or empty) `content` for both. The fix: `_call_nvidia` in `src/scoring/llm_scorer.py` passes `max_tokens=4096`. Cost: ~750 completion tokens per job, <1 cent per job on the free NVIDIA catalogue tier.
 - **Tenacity retry** — `tenacity.Retrying` with `wait_random_exponential(multiplier=1, max=60)`, 3 attempts per model before rotating or moving to next provider. Format: log every attempt as `[PIPELINE] Provider: groq | Model: ... | Result: Success/Fail | Attempt: N`
 - **Leaky-bucket pacing** — `batch_score()` splits into chunks of `MAX_PER_CHUNK=5` with `CHUNK_DELAY=20s`. Total pipeline ~2.5min for 20 jobs
 - **Cover letter `_resolve_provider()`** — probes OpenCode Zen → NVIDIA → Groq → OpenRouter → Gemini (**2026-06-29 reorder**: was previously Groq-primary; OpenCode Zen is the primary cascade-wide so the free deepseek-v4-flash-free is the default across scorer, research, and cover letters, with NVIDIA as the high-quality 200K-context fallback, Groq as the fastest paid fallback once healthy). `time.sleep(5)` between calls in evaluation loop to avoid 429s. Files tagged `__LLM` (AI) or `__fallback` (template). Cover letters consume ``research_brief`` dict from the job for institution-aware writing.
@@ -113,6 +143,203 @@ env var, **without** touching the shared `profile.json` or any other branch.
 - Research Agent `web_search` uses DuckDuckGo HTML endpoint — may be rate-limited; `deep_scrape` falls back to HTTP if Firecrawl is unconfigured
 - `StrategicBrief.fallback()` is called when research data cannot be gathered — this does NOT crash the pipeline
 - Virtual environment at `.venv/` but deps installed globally; `pip install -e .` not required
+
+## Board availability audit (2026-10-01)
+
+Every non-contributing scraper was re-reconed against the live sites. Only
+**one was actually broken**; the rest are structurally or credential-gated.
+
+| Scraper | Real cause | Outcome |
+|---|---|---|
+| `gulftalent` | **Genuinely broken** — two bugs. See below. | Header bug fixed; board gated off by default |
+| `dipont` | **Not a job board.** `/careers/independent-schools-jobs/` is a Divi (`et_pb_*`) marketing page: zero job cards, all four original selectors match 0. Vacancies live on 5 partner schools — 3 are dead (`huaercollegiate.com` does not resolve, `rkcshz.cn` times out, `dipont-hc.com` returns 0 bytes) and the 2 that respond publish none either (`kcschengdu` links only to a login portal, `nkcswx.cn` only to `mailto:`). | Log now states the finding; nothing extractable exists |
+| `schrole` | **Credential-gated.** Correct listing roots are `/jobs-for-teachers/<region>/` (not `/en/job-search`, which 404s). Those pages serve only *school* cards; every public path on `app.schrole.com` is either `/api/files/<uuid>` or `/Identity/Account/Login`. | Log states it is credential-gated, not "unimplemented"; `REGION_PATHS` kept for a future credentialed build |
+| `toptutorjob` | Camoufox binary never fetched — `~/.cache/camoufox/` is empty | Needs `python -m camoufox fetch` (~1.3 GB) then `CAMOUFOX_ENABLED=1` |
+| `search_associates` | No `SA_USERNAME`/`SA_PASSWORD` in `.env` | Needs credentials |
+| `teacher_horizons` | No `TH_EMAIL`/`TH_PASSWORD` in `.env` | Needs credentials |
+
+**GulfTalent, the one real bug.** Two defects:
+1. **Cloudflare 403.** Probed header combinations against the live endpoint;
+   only the full XHR set succeeds — `BaseScraper.HEADERS` (403) → `+
+   Accept: application/json` (403) → `+ Referer/Origin` (403) → `+
+   X-Requested-With: XMLHttpRequest` (**200**, real JSON). Scoped to this
+   scraper as `API_HEADERS`, not added to `BaseScraper` — the other ten
+   scrapers must keep presenting as ordinary browser page loads.
+2. **`KEYWORDS` was dead code.** `BaseScraper.run()` injects a generic
+   default list whenever `search_terms` is None, so the board's targeted
+   subject+curriculum phrases never fired. `run()` is now overridden.
+
+Even fixed, the board is not worth running: Cloudflare still challenges
+roughly **1 request in 3** (with `POLITE_DELAY` and a retry on challenge),
+and the queries that get through returned **0 teaching roles** — it is a
+corporate Gulf employment list where "physics" hits medical physicists and
+engineers. Keywords trimmed 6 → 2 and the board is now **opt-in via
+`GT_ENABLED=1`** (`gt_enabled` in `src/config.py`), saving ~80s per run.
+
+### The two action items, resolved (2026-10-01)
+
+**`last_seen` migration — no longer needed.** It cannot be applied
+programmatically: `supabase-py` has no raw-DDL method, the project exposes no
+DDL RPC (`exec_sql`/`execute_sql`/`exec`/`query` all return `PGRST202`), and
+`SUPABASE_DB_URL` in `.env` has a **literally masked password**
+(`postgres://…:***@…`), so a direct connection is impossible. Rather than leave
+a manual step, `SupabaseClient` now **probes once and caches the answer**
+(`_supports_last_seen`). The first batch pays one rejected request; every
+batch after it omits the column silently. Adding the column later upgrades it
+automatically with no code change — the probe succeeds and the flag flips.
+
+Nothing else depended on `last_seen`: it was always diagnostic, and the 45-day
+freshness gate reads `created_at`.
+
+**Email — now honest, still needs credentials.** `email_status()` in
+`src/notify/email_sender.py` reports whether email can *actually* be sent and,
+if not, exactly which value is missing. The previous `send_email_digest()`
+returned `False` silently, so a config claiming `EMAIL_PROVIDER=resend` logged
+a benign-looking `Email digest: skipped` forever.
+
+Critically, it now also treats **placeholder addresses as missing**: `.env`
+shipped `EMAIL_FROM=job-hunter@yourdomain.com` and `EMAIL_TO=you@email.com`, so
+merely adding a Resend key would still have delivered nowhere. The warning is
+logged **once per process** rather than once per job.
+
+To enable, set in `.env` (the guide forbids editing `.env` from tooling, so
+this one is manual):
+
+```
+EMAIL_PROVIDER=resend          # or "smtp", or "" to disable cleanly
+RESEND_API_KEY=re_...          # from https://resend.com/api-keys
+EMAIL_FROM=alerts@yourdomain.com   # a domain VERIFIED in Resend
+EMAIL_TO=you@gmail.com
+```
+
+`.env.example` documents all of the above. Telegram remains the primary alert
+channel and is unaffected either way.
+
+### Regressions found and fixed while doing this
+
+- **SeekTeachers could zero out the whole board.** The deeper round-robin
+  crawl issues more requests and started hitting read timeouts; a single
+  failed page propagated out of `scrape()`, so `run_scrapers()` logged
+  `✗ seekteachers failed` and returned **0 jobs** — losing ~831 listings to
+  one bad page. Added `BaseScraper.fetch_with_retry()` (3 attempts,
+  backoff; transport errors only, so a 404 still fails fast) and made a
+  persistently failing page skip-and-continue per country instead of
+  aborting.
+- **The upsert reported success when it had written nothing.**
+  `upsert_jobs()` returned `len(rows)` even when the request failed and jobs
+  were diverted to the local SQLite cache, so the pipeline logged
+  `Stored 43 new jobs in Supabase` for a write that never happened. It now
+  returns `None` on fallback and `run_pipeline` logs
+  `Upsert did not reach Supabase` and reports `0 new`.
+- **`get_seen_urls()` silently degraded dedup.** One read timeout sent the
+  pipeline to the local `seen_urls` table, which holds ~53 URLs against
+  ~400 in Supabase — so nearly every scraped job was misclassified as "new".
+  Now retries twice and logs the degradation at ERROR.
+
+## Job freshness & stale-listing suppression (2026-09-30)
+
+Added because the pipeline kept re-surfacing a fixed, saturating pool of
+**already-closed** vacancies. TES and LinkedIn are genuinely exhausted
+(~20–40 and ~28 unique listings), so every run re-read the same postings and
+re-alerted on them. There is no reliable expiry signal to filter on:
+
+- **96% of `job_listings` rows have `closing_date IS NULL`** (11 of 358).
+- **TES's `__NEXT_DATA__` payload carries no date field at all** — no posted
+  date, no closing date. Probing every field for `dat|post|expir|clos|dead`
+  returns nothing.
+- Only **BSOTeachers** exposes a usable signal (`li.results-posted-at`,
+  "Posted 6 days ago"), and it is relative text that is not yet parsed.
+
+So freshness is derived from **`created_at`** — when the posting first entered
+our pool — rather than from any field the boards supply.
+
+- **`max_job_age_days` (default 45, `src/config.py`)** — `get_scored_unnotified()`
+  takes `max_age_days` and filters on `created_at`. Set to `0` to disable.
+  On the live dataset this suppressed 112 of 137 un-notified rows.
+- **Deliberately NOT gated on `last_seen`** — TES re-serves the identical URL
+  indefinitely, so a `last_seen` gate refreshes forever and suppresses
+  nothing. `created_at` is the only field that distinguishes a zombie listing
+  from a live one. This is why the freshness gate works at all.
+- **Tradeoff** — a vacancy genuinely open 45+ days (a long maternity cover,
+  say) is suppressed. Unavoidable without a date on the payload.
+- **`last_seen` column (2026-09-30)** — records when a posting was last present
+  on its board, distinguishing "still listed" from "vanished". Diagnostic
+  only; nothing gates on it yet. **Requires the manual migration** in
+  `scripts/setup_supabase.sql`:
+  ```sql
+  alter table job_listings add column if not exists last_seen timestamptz default now();
+  create index if not exists idx_job_listings_last_seen on job_listings(last_seen);
+  ```
+  Until that is applied, `SupabaseClient.upsert_jobs()` catches the resulting
+  `APIError`, logs `job_listings.last_seen is missing`, and **retries without
+  the column** — the pipeline is fully functional either way, `last_seen` is
+  simply inert. Note the supabase-py client has no raw-DDL method
+  (`client.query` does not exist) and this repo has no `psycopg`, so the DDL
+  must be pasted into the Supabase SQL Editor.
+- **Upsert-all change** — `run_pipeline()` now upserts *every* scraped job, not
+  only unseen ones, so re-upserting refreshes `last_seen` without disturbing
+  `created_at` / `score` / `notified`. The reported "new" count is still
+  computed from the unseen set.
+
+## Scoring & generation fixes (2026-09-30)
+
+- **Batch scoring silently lost jobs (P0)** — all four
+  `_batch_score_via_*` providers shared a branch that answered a bare JSON
+  object with `return [json.loads(json_str)]`. `_try_batch` treats non-`None`
+  as success, `batch_score` extends the results, and `score_jobs_from_db`
+  paired them with `zip(unscored, results)` — so **every job after the first
+  in a chunk was left permanently at `score=null`** and re-attempted every run
+  (observed: "Scoring 3 jobs" → "→ 1 jobs scored"). Three fixes: the branch now
+  returns `None` so `_try_batch` cascades to the per-job path;
+  `batch_score()` backfills any short chunk individually; both callers in
+  `src/main.py` use index-checked assignment instead of `zip` and log a
+  warning if anything is still unscored. Gemini is the provider that actually
+  trips this — it honours `response_mime_type: application/json` and answers
+  with an object rather than an array.
+- **TES `country` was garbage** — `location.split(",")[-1].strip()` produced
+  `"Surrey"`, `"Byfleet"`, `"BN27 3QH"` (a postcode). That one field fed
+  `job_signature` dedup, the LLM's Location 0–25 rubric, and the country-match
+  bonus at `llm_scorer.py:_apply_modifiers`. Because `profile.json`
+  `target_countries` uses the short form `"UAE"` while TES emits
+  `"United Arab Emirates"`, **the country bonus never fired for a single UAE
+  posting**. Replaced with `_resolve_country()`: alias map (mirroring
+  `seekteachers.COUNTRY_ALIASES`) → target-country match → UK region → UK
+  postcode → trailing segment. Known residual gap: a UK posting naming only a
+  town/district ("Bromsgrove, Sunbrae") still resolves to that town; closing
+  it needs a gazetteer, and it is no worse than the previous behaviour.
+- **TES phantom pagination (wasted ~24s/run)** — `range(1, 6)` never stopped
+  early because the old guard was `len(jobs) < 20` and TES serves exactly 20
+  listings per page. Probing pages 1–15 showed **every page returns the
+  identical 20 listings** — TES ignores `page` entirely beyond the first. The
+  loop now breaks on "page yielded no new URLs" (plus a diminishing-returns
+  guard), matching how `seekteachers.py` already paginates. Verified: same 41
+  unique jobs from 6 requests instead of 15.
+- **Cover letters silently degraded to templates** — `CoverLetterGenerator`
+  resolves one provider on first use, caches it on the instance, and reuses it
+  for every letter, with no retry or cascade. A single 429 (Groq, exhausted by
+  the preceding research-agent loop) therefore turned *every remaining letter
+  in the batch* into a `__fallback.md` template — 12/12 on one run.
+  `_demote_provider()` now walks the rest of the cascade on an empty response
+  and re-resolves the pinned provider, so a rate limit costs one letter rather
+  than the batch.
+
+## Known coverage ceiling (measured 2026-09-30, not yet addressed)
+
+For anyone wondering why the pipeline reports `0 new`:
+
+| Board | State | Yield available |
+|---|---|---|
+| TES | exhausted — pagination is a no-op, ~20–40 unique total | none |
+| LinkedIn | saturated at 28 | none |
+| seekteachers | **30–50% never crawled** (10-page cap; country 5 still returned 20/page at page 30) | ~6 physics jobs/country |
+| gulftalent | 403 on every query; also its 6 targeted `KEYWORDS` are **dead code** because `BaseScraper.run()` injects a default 3-term list | offline |
+| dipont | stale selectors, matches nothing | offline |
+| schrole | 14-line `return []` stub, still registered in the fleet | offline |
+| toptutorjob / search_associates / teacher_horizons | dormant — no creds, `CAMOUFOX_ENABLED=0` | offline |
+
+Also dead: **email**. `.env` sets `EMAIL_PROVIDER=resend` with an empty
+`RESEND_API_KEY`, so `Email digest: skipped` every run while the config
+implies email is wired.
 
 ## Stealth Browser Harness (`stealth_browser.py`)
 
