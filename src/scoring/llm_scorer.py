@@ -889,7 +889,8 @@ class LLMScorer:
         """Call NVIDIA with *model*.
 
         Reasoning-mode headroom: both NVIDIA chain members
-        ([nvidia/nemotron-3-super-120b-a12b, openai/gpt-oss-20b])
+        ([nvidia/nemotron-3-super-120b-a12b,
+        nvidia/nemotron-3-nano-omni-30b-a3b-reasoning])
         emit a response that puts a meaningful fraction of the
         completion budget into ``reasoning_content`` chain-of-thought,
         so the default ``max_tokens=800`` returns ``content=""`` or a
