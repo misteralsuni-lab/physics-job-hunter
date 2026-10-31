@@ -2,6 +2,7 @@ import json
 import logging
 import re
 import sqlite3
+import threading
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, date
@@ -127,22 +128,33 @@ class ProviderHealth:
     VALIDITY_SECS = 24 * 60 * 60  # re-probe a dead verdict after 24h
 
     def __init__(self, db_path: str | Path = DB_PATH):
-        self._conn = sqlite3.connect(str(db_path))
-        self._conn.execute("""
-            CREATE TABLE IF NOT EXISTS provider_health (
-                provider    TEXT PRIMARY KEY,
-                verdict     TEXT NOT NULL,
-                http_status INTEGER,
-                checked_at  TEXT NOT NULL DEFAULT (datetime('now'))
-            )
-        """)
-        self._conn.commit()
+        # The registry is a module-level singleton imported on the main
+        # thread, but APScheduler executes pipelines on worker threads.
+        # SQLite's default check_same_thread=True rejected every scheduled
+        # run ("SQLite objects created in a thread can only be used in that
+        # same thread").  Allow cross-thread use and serialise access with
+        # ``self._lock`` — the statements are tiny, so contention is nil.
+        self._lock = threading.Lock()
+        self._conn = sqlite3.connect(
+            str(db_path), check_same_thread=False, timeout=10
+        )
+        with self._lock:
+            self._conn.execute("""
+                CREATE TABLE IF NOT EXISTS provider_health (
+                    provider    TEXT PRIMARY KEY,
+                    verdict     TEXT NOT NULL,
+                    http_status INTEGER,
+                    checked_at  TEXT NOT NULL DEFAULT (datetime('now'))
+                )
+            """)
+            self._conn.commit()
 
     def cached_verdict(self, name: str) -> str | None:
         """Return the recorded verdict if it is still fresh, else None."""
-        row = self._conn.execute(
-            "SELECT verdict, checked_at FROM provider_health WHERE provider = ?", (name,)
-        ).fetchone()
+        with self._lock:
+            row = self._conn.execute(
+                "SELECT verdict, checked_at FROM provider_health WHERE provider = ?", (name,)
+            ).fetchone()
         if not row:
             return None
         verdict, checked_at = row
@@ -155,32 +167,36 @@ class ProviderHealth:
         return verdict
 
     def record(self, name: str, verdict: str, http_status: int | None = None) -> None:
-        self._conn.execute(
-            """INSERT INTO provider_health (provider, verdict, http_status, checked_at)
-               VALUES (?, ?, ?, datetime('now'))
-               ON CONFLICT(provider) DO UPDATE SET
-                 verdict = excluded.verdict,
-                 http_status = excluded.http_status,
-                 checked_at = excluded.checked_at""",
-            (name, verdict, http_status),
-        )
-        self._conn.commit()
+        with self._lock:
+            self._conn.execute(
+                """INSERT INTO provider_health (provider, verdict, http_status, checked_at)
+                   VALUES (?, ?, ?, datetime('now'))
+                   ON CONFLICT(provider) DO UPDATE SET
+                     verdict = excluded.verdict,
+                     http_status = excluded.http_status,
+                     checked_at = excluded.checked_at""",
+                (name, verdict, http_status),
+            )
+            self._conn.commit()
 
     def known_dead(self) -> list[tuple[str, str | None, str]]:
         """Diagnostics: (provider, verdict, checked_at) for every row."""
-        return self._conn.execute(
-            "SELECT provider, http_status, checked_at FROM provider_health"
-        ).fetchall()
+        with self._lock:
+            return self._conn.execute(
+                "SELECT provider, http_status, checked_at FROM provider_health"
+            ).fetchall()
 
     def clear(self, name: str | None = None) -> None:
-        if name:
-            self._conn.execute("DELETE FROM provider_health WHERE provider = ?", (name,))
-        else:
-            self._conn.execute("DELETE FROM provider_health")
-        self._conn.commit()
+        with self._lock:
+            if name:
+                self._conn.execute("DELETE FROM provider_health WHERE provider = ?", (name,))
+            else:
+                self._conn.execute("DELETE FROM provider_health")
+            self._conn.commit()
 
     def close(self) -> None:
-        self._conn.close()
+        with self._lock:
+            self._conn.close()
 
 
 _provider_health = ProviderHealth()
@@ -986,7 +1002,7 @@ class LLMScorer:
         """Single Gemini API call.  Returns parsed dict or None."""
         resp = httpx.post(
             "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-            params={"key": settings.gemini_api_key},
+            headers={"x-goog-api-key": settings.gemini_api_key},
             json={
                 "contents": [{"role": "user", "parts": [{"text": prompt}]}],
                 "generationConfig": {
@@ -1026,7 +1042,7 @@ class LLMScorer:
         try:
             resp = httpx.post(
                 "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-                params={"key": settings.gemini_api_key},
+                headers={"x-goog-api-key": settings.gemini_api_key},
                 json={
                     "contents": [{"role": "user", "parts": [{"text": prompt}]}],
                     "generationConfig": {

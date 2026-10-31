@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import re
 import sys
 from datetime import datetime
 
@@ -29,6 +30,37 @@ from src.notify.telegram import send_telegram_alert
 from src.notify.email_sender import send_email_digest
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
+
+class _SecretRedactingFilter(logging.Filter):
+    """Mask credentials that httpx includes in request URLs (Telegram bot
+    tokens, Gemini keys) so they never reach logs or journald."""
+
+    _PATTERNS = (
+        (re.compile(r"(bot\d+:)[A-Za-z0-9_-]+"), r"\1***"),
+        (re.compile(r"([?&](?:key|api_key|access_token|token)=)[^&\s\"']+"), r"\1***"),
+    )
+
+    def _redact(self, value: str) -> str:
+        for pattern, replacement in self._PATTERNS:
+            value = pattern.sub(replacement, value)
+        return value
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        try:
+            message = record.getMessage()
+        except Exception:
+            return True
+        redacted = self._redact(message)
+        if redacted != message:
+            record.msg = redacted
+            record.args = ()
+        return True
+
+
+for _logger_name in ("httpx", "httpcore"):
+    logging.getLogger(_logger_name).addFilter(_SecretRedactingFilter())
+
 log = logging.getLogger("job-hunter")
 
 

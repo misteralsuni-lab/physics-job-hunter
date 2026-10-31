@@ -75,7 +75,7 @@ class TESScraper(BaseScraper):
             prev_new = 0
             for page in range(1, self.MAX_PAGES + 1):
                 path = f"/jobs/search?keywords={quote(term)}&location=International&page={page}"
-                soup = self.fetch(path)
+                soup = self.fetch_with_retry(path)
                 jobs = self._extract_from_json(soup)
 
                 new = 0

@@ -46,7 +46,7 @@ def main() -> int:
     try:
         resp = httpx.post(
             ENDPOINT,
-            params={"key": key},
+            headers={"x-goog-api-key": key},
             json=payload,
             timeout=15,
         )

@@ -15,7 +15,7 @@ class BSOTeachersScraper(BaseScraper):
 
         for page_num in range(1, 4):
             path = f"/jobs.aspx?page={page_num}" if page_num > 1 else "/jobs.aspx"
-            soup = self.fetch(path)
+            soup = self.fetch_with_retry(path)
             jobs = self._extract_jobs(soup)
 
             if not jobs:

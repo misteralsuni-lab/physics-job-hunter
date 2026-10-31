@@ -23,7 +23,7 @@ class DipontScraper(BaseScraper):
         all_jobs: list[dict[str, Any]] = []
         seen_urls: set[str] = set()
 
-        soup = self.fetch("/careers/independent-schools-jobs/")
+        soup = self.fetch_with_retry("/careers/independent-schools-jobs/")
 
         # Recon 2026-10-01: this page is NOT a job board. It is a WordPress
         # page built with Divi (``et_pb_*`` classes) containing navigation and

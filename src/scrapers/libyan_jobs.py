@@ -11,7 +11,7 @@ class LibyanJobsScraper(BaseScraper):
 
         for page_num in range(1, 4):
             path = f"/jobs/page/{page_num}/" if page_num > 1 else "/jobs/"
-            soup = self.fetch(path)
+            soup = self.fetch_with_retry(path)
             jobs = self._extract_jobs(soup)
 
             for j in jobs:

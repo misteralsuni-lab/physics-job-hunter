@@ -15,10 +15,10 @@ log = logging.getLogger(__name__)
 # truncated every country short of its tail.
 MAX_PAGES_PER_COUNTRY = 20
 
-# Global ceiling across all countries.  At 20/country with 6 target countries
-# this is a backstop, not the binding constraint: the two smallest countries
-# exhaust early and release budget back to the others.
-MAX_PAGES_TOTAL = 120
+# Global ceiling across all countries.  With 25 target countries this allows
+# roughly 10 pages per country on average; countries that exhaust early
+# release their budget to the larger boards.  Kept as a runtime backstop.
+MAX_PAGES_TOTAL = 240
 
 POLITE_DELAY = 0.5
 
@@ -28,7 +28,23 @@ COUNTRY_ALIASES = {
     "UAE": "UAE",
     "Saudi Arabia": "Saudi Arabia",
     "KSA": "Saudi Arabia",
+    "Bahrain": "Bahrain",
     "Kuwait": "Kuwait",
+    "Oman": "Oman",
+    "Hong Kong": "Hong Kong",
+    "Vietnam": "Vietnam",
+    "Japan": "Japan",
+    "South Korea": "South Korea",
+    "Korea": "South Korea",
+    "Taiwan": "Taiwan",
+    "Indonesia": "Indonesia",
+    "Czech Republic": "Czechia",
+    "Czechia": "Czechia",
+    "Austria": "Austria",
+    "Hungary": "Hungary",
+    "Slovakia": "Slovakia",
+    "Turkey": "Türkiye",
+    "Türkiye": "Türkiye",
 }
 
 _COUNT_RE = re.compile(r"\((\d+)\)\s*$")
@@ -167,7 +183,7 @@ class SeekTeachersScraper(BaseScraper):
         return all_jobs
 
     def _discover_countries(self) -> dict[str, str]:
-        soup = self.fetch("/jobs.asp?keyword=physics")
+        soup = self.fetch_with_retry("/jobs.asp?keyword=physics")
         result: dict[str, str] = {}
         for link in soup.select('a[href*="keyword=physics&country_id="]'):
             href = self.extract_attr(link, "href")

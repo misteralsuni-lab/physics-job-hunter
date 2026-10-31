@@ -321,7 +321,7 @@ class CoverLetterGenerator:
         try:
             resp = httpx.post(
                 "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-                params={"key": settings.gemini_api_key},
+                headers={"x-goog-api-key": settings.gemini_api_key},
                 json={"contents": [{"parts": [{"text": prompt}]}]},
                 timeout=120,
             )

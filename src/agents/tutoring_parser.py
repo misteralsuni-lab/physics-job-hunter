@@ -255,7 +255,7 @@ def _call_gemini(prompt: str, model: str = "gemini-2.5-flash") -> str | None:
     try:
         r = httpx.post(
             f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
-            params={"key": settings.gemini_api_key},
+            headers={"x-goog-api-key": settings.gemini_api_key},
             json={"contents": [{"parts": [{"text": prompt}]}]},
             timeout=settings.tutoring_parse_timeout_s,
         )

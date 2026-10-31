@@ -7,13 +7,75 @@ placeholder and logs a warning.
 """
 from __future__ import annotations
 
+import json
 import logging
 import os
+import re
+import time
+from pathlib import Path
 from typing import Any
 
 from src.scrapers.base import BaseScraper
 
 log = logging.getLogger(__name__)
+
+_PROFILE_PATH = Path(__file__).resolve().parents[2] / "data" / "profile.json"
+_POLITE_DELAY = 1.0
+
+
+def _target_countries() -> list[str]:
+    """Countries from the operator profile, used for location-scoped searches."""
+    try:
+        data = json.loads(_PROFILE_PATH.read_text(encoding="utf-8"))
+        return [str(c).strip() for c in data.get("target_countries", []) if str(c).strip()]
+    except (OSError, ValueError):
+        return []
+
+
+# LinkedIn emits full country names; the scorer's country bonus (and the
+# profile's target_countries) use short canonical forms.  Without this,
+# "United Arab Emirates" never matched "UAE", so a target-country LinkedIn
+# role lost the 25-point location credit in the rule-based fallback and its
+# signature differed from the same vacancy on TES.
+_COUNTRY_ALIASES = {
+    "united arab emirates": "UAE",
+    "uae": "UAE",
+    "u.a.e.": "UAE",
+    "ksa": "Saudi Arabia",
+    "saudi arabia": "Saudi Arabia",
+    "bahrain": "Bahrain",
+    "kuwait": "Kuwait",
+    "oman": "Oman",
+    "hong kong": "Hong Kong",
+    "hong kong sar": "Hong Kong",
+    "vietnam": "Vietnam",
+    "viet nam": "Vietnam",
+    "japan": "Japan",
+    "south korea": "South Korea",
+    "korea": "South Korea",
+    "republic of korea": "South Korea",
+    "taiwan": "Taiwan",
+    "indonesia": "Indonesia",
+    "czechia": "Czechia",
+    "czech republic": "Czechia",
+    "austria": "Austria",
+    "hungary": "Hungary",
+    "slovakia": "Slovakia",
+    "slovak republic": "Slovakia",
+    "uk": "United Kingdom",
+    "u.k.": "United Kingdom",
+    "great britain": "United Kingdom",
+    "britain": "United Kingdom",
+    "england": "United Kingdom",
+    "scotland": "United Kingdom",
+    "wales": "United Kingdom",
+    "northern ireland": "United Kingdom",
+    "usa": "United States",
+    "u.s.a.": "United States",
+    "united states of america": "United States",
+    "türkiye": "Türkiye",
+    "turkey": "Türkiye",
+}
 
 try:
     from curl_cffi import requests as curl_requests
@@ -41,18 +103,32 @@ class LinkedInScraper(BaseScraper):
         all_jobs: list[dict[str, Any]] = []
         seen_urls: set[str] = set()
 
-        for term in search_terms:
-            jobs = self._fetch_linkedin_jobs(term)
+        # Worldwide queries catch globally advertised international-school
+        # roles, but LinkedIn's relevance ranking heavily favours the
+        # operator's own region (India/US/Europe).  A location-scoped query
+        # per target country surfaces the UAE/Qatar/Saudi/China roles that
+        # the worldwide search buries — those are the ones that score into
+        # the notification threshold.
+        queries: list[tuple[str, str]] = [(term, "Worldwide") for term in search_terms]
+        for country in _target_countries():
+            queries.append(("Physics teacher", country))
+
+        for index, (term, location) in enumerate(queries):
+            jobs = self._fetch_linkedin_jobs(term, location=location)
             for j in jobs:
                 url = j.get("url", "")
                 if url and url not in seen_urls:
                     seen_urls.add(url)
                     j["source"] = "linkedin"
                     all_jobs.append(j)
+            if index < len(queries) - 1:
+                time.sleep(_POLITE_DELAY)
 
         return all_jobs
 
-    def _fetch_linkedin_jobs(self, query: str, pages: int = 1) -> list[dict[str, Any]]:
+    def _fetch_linkedin_jobs(
+        self, query: str, pages: int = 1, location: str = "Worldwide"
+    ) -> list[dict[str, Any]]:
         """Search LinkedIn public job listings via curl-impersonate."""
         assert curl_requests is not None
 
@@ -62,13 +138,29 @@ class LinkedInScraper(BaseScraper):
             # Public search endpoint (no auth required)
             url = (
                 "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
-                f"?keywords={self._enc(query)}&location=Worldwide&start={start}"
+                f"?keywords={self._enc(query)}&location={self._enc(location)}&start={start}"
             )
-            try:
-                resp = curl_requests.get(url, impersonate="chrome120")  # type: ignore[arg-type]
-                resp.raise_for_status()
-            except Exception as exc:
-                log.warning("LinkedIn request failed: %s", exc)
+            resp = None
+            for attempt in range(1, 4):
+                try:
+                    candidate = curl_requests.get(  # type: ignore[arg-type]
+                        url, impersonate="chrome120", timeout=30
+                    )
+                    candidate.raise_for_status()
+                    resp = candidate
+                    break
+                except Exception as exc:
+                    if attempt < 3:
+                        wait = 2 * attempt
+                        log.warning(
+                            "LinkedIn request failed (attempt %d/3): %s — retrying in %ds",
+                            attempt, exc, wait,
+                        )
+                        time.sleep(wait)
+                    else:
+                        log.warning("LinkedIn request failed after 3 attempts: %s", exc)
+
+            if resp is None:
                 break
 
             soup = self._soup_from_text(resp.text)  # type: ignore[arg-type]
@@ -85,7 +177,27 @@ class LinkedInScraper(BaseScraper):
 
                 title = self.extract_text(title_el)
                 company = self.extract_text(company_el) if company_el else ""
-                location = self.extract_text(meta_el) if meta_el else ""
+
+                # ``div.base-search-card__metadata`` also contains the posted
+                # time and occasionally an "Actively Hiring" badge.  Reading
+                # it wholesale produced countries such as
+                # "Switzerland2 days ago" and "TXBe an early applicant",
+                # which broke the country bonus, signature dedup and the
+                # Telegram location line.  Prefer the dedicated location span.
+                location_el = card.select_one("span.job-search-card__location")
+                if location_el:
+                    location = self.extract_text(location_el)
+                elif meta_el:
+                    location = self.extract_text(meta_el)
+                    location = re.sub(
+                        r"\s*(Actively Hiring|Be an early applicant|"
+                        r"\d+\s+(day|week|month|year)s?\s+ago).*$",
+                        "",
+                        location,
+                    ).strip()
+                else:
+                    location = ""
+
                 raw_url = self.extract_attr(link_el, "href")
 
                 # Normalise URL to the canonical public job page
@@ -100,12 +212,15 @@ class LinkedInScraper(BaseScraper):
                 # we leave it None so upstream coercion handles it.
                 closing_date = None
 
+                country = location.split(",")[-1].strip() if "," in location else location
+                country = _COUNTRY_ALIASES.get(country.lower(), country)
+
                 jobs.append({
                     "title": title,
                     "url": url,
                     "school": company,
                     "location": location,
-                    "country": location.split(",")[-1].strip() if "," in location else location,
+                    "country": country,
                     "salary_range": "",
                     "closing_date": closing_date,
                     # Subject: ONLY mark "Physics" when the title actually says so.

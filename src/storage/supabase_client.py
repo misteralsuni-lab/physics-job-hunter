@@ -37,13 +37,23 @@ class SupabaseClient:
         return self._supports_last_seen is True
 
     def health_check(self) -> bool:
-        try:
-            self.client.table("job_listings").select("id").limit(1).execute()
-            log.info("Supabase connection healthy")
-            return True
-        except (httpx.HTTPError, httpx.ConnectError, httpx.TimeoutException) as e:
-            log.warning("Supabase unreachable at startup: %s — using DedupStore", e)
-            return False
+        last_error: Exception | None = None
+        for attempt in range(1, 4):
+            try:
+                self.client.table("job_listings").select("id").limit(1).execute()
+                log.info("Supabase connection healthy")
+                return True
+            except (httpx.HTTPError, httpx.ConnectError, httpx.TimeoutException) as e:
+                last_error = e
+                if attempt < 3:
+                    log.warning(
+                        "Supabase health check attempt %d/3 failed (%s) — retrying",
+                        attempt, e,
+                    )
+                    time.sleep(2 * attempt)
+
+        log.warning("Supabase unreachable at startup: %s — using DedupStore", last_error)
+        return False
 
     def get_seen_urls(self) -> set[str]:
         """Every URL already stored in Supabase.
